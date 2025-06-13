@@ -11,3 +11,4 @@ wheels/
 
 # data dirs
 */data/*
+graphhopper_data
