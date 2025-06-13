@@ -9,7 +9,7 @@ lf = pl.scan_csv(
     separator="\t",
     has_header=True,
     low_memory=True,
-    new_columns=["date", "time", "lon", "lat"],
+    new_columns=["date", "time", "lat", "lon"],
     schema_overrides={"date": pl.Utf8, "time": pl.Utf8},  # será convertido depois
 ).select("date", "time", "lon", "lat")
 
