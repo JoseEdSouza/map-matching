@@ -1,13 +1,13 @@
 services:
-  # import_osm:
-  #   image: israelhikingmap/graphhopper:latest
-  #   container_name: import_osm
-  #   environment:
-  #     - JAVA_OPTS=-Xmx8g -Xms8g
-  #     - URL=https://download.geofabrik.de/north-america/us/washington-latest.osm.pbf
-  #     - ACTION=import
-  #   volumes:
-  #     - ./graphhopper_data:/data
+  import-map:
+    image: israelhikingmap/graphhopper:latest
+    container_name: import_osm
+    environment:
+      - JAVA_OPTS=-Xmx8g -Xms8g
+      - URL=https://download.geofabrik.de/north-america/us/washington-latest.osm.pbf
+      - ACTION=import
+    volumes:
+      - ./graphhopper_data:/data
     
   graphhopper:
     image: israelhikingmap/graphhopper:latest
