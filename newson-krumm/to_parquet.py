@@ -11,19 +11,24 @@ lf = pl.scan_csv(
     low_memory=True,
     new_columns=["date", "time", "lon", "lat"],
     schema_overrides={"date": pl.Utf8, "time": pl.Utf8},  # será convertido depois
+).select("date", "time", "lon", "lat")
+
+lf = lf.with_columns(
+    pl.col("date").str.strptime(pl.Date, "%d-%b-%Y"),
+    pl.col("time").str.strptime(pl.Time, "%H:%M:%S"),
 )
 
 # Conversão para Date e Time, e combinação
 lf = lf.with_columns(
     pl.datetime(
-        year=pl.col("date").str.strptime(pl.Date, "%d-%b-%Y").dt.year(),
-        month=pl.col("date").str.strptime(pl.Date, "%d-%b-%Y").dt.month(),
-        day=pl.col("date").str.strptime(pl.Date, "%d-%b-%Y").dt.day(),
-        hour=pl.col("time").str.strptime(pl.Time, "%H:%M:%S").dt.hour(),
-        minute=pl.col("time").str.strptime(pl.Time, "%H:%M:%S").dt.minute(),
-        second=pl.col("time").str.strptime(pl.Time, "%H:%M:%S").dt.second(),
+        year=pl.col("date").dt.year(),
+        month=pl.col("date").dt.month(),
+        day=pl.col("date").dt.day(),
+        hour=pl.col("time").dt.hour(),
+        minute=pl.col("time").dt.minute(),
+        second=pl.col("time").dt.second(),
     ).alias("recorded_timestamp")
-)
+).select("recorded_timestamp","lon", "lat")
 
 
 # Exportação para Parquet
