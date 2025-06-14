@@ -4,6 +4,10 @@ run:
 	@echo "Running the application..."
 	@docker compose up graphhopper
 
+stop:
+	@echo "Stopping the application..."
+	@docker compose stop graphhopper
+
 import-map:
 	@echo "Importing map data..."
 	@docker compose run --rm import-map
@@ -15,11 +19,12 @@ import-and-run:
 
 list:
 	@echo "Available targets:"
-	@echo "-----------------------------------------------"
+	@echo "-------------------------------------------------"
 	@echo "| Target           | Description                |"
-	@echo "-----------------------------------------------"
+	@echo "-------------------------------------------------"
 	@echo "| run              | Start the GraphHopper app  |"
 	@echo "| import-map       | Import map data from OSM   |"
 	@echo "| import-and-run   | Import map and start app   |"
 	@echo "| list             | Show this help message     |"
-	@echo "-----------------------------------------------"
+	@echo "| stop             | Stop the GraphHopper app   |"
+	@echo "-------------------------------------------------"
