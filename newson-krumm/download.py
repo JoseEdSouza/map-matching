@@ -2,12 +2,12 @@ import asyncio
 import requests
 from pathlib import Path
 
-DATA_BASE_PATH = Path(__file__).parent / "data"
+DATA_BASE_PATH = Path(__file__).parent / "data" / "raw"
 BASE_URL = "https://www.microsoft.com/en-us/research/wp-content/uploads/2017/07/"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 }
 
 
@@ -25,6 +25,7 @@ async def download_file(filename: str) -> None:
     else:
         print(f"Failed to download {filename}. Status code: {response.status_code}")
 
+
 async def main():
     """
     Main function to download the required files.
@@ -37,9 +38,7 @@ async def main():
         "ground_truth_route.txt",
     ]
 
-    asyncio.gather(
-        *(download_file(filename) for filename in files_to_download)
-    )
+    asyncio.gather(*(download_file(filename) for filename in files_to_download))
 
 
 if __name__ == "__main__":

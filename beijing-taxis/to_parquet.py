@@ -10,7 +10,7 @@ import polars as pl
 
 
 DATA_PATH = Path(__file__).parent / "data/release/taxi_log_2008_by_id"
-OUTPUT_PATH = Path(__file__).parent / "data" /"beijing_taxi_logs.parquet.zip"
+OUTPUT_PATH = Path(__file__).parent / "data" / "beijing_taxi_logs.parquet.zip"
 
 
 @transformer
@@ -40,7 +40,7 @@ def load_lazyframe(path: str) -> pl.LazyFrame:
 @transformer
 def to_parquet(lf: pl.LazyFrame) -> BytesIO:
     buffer = BytesIO()
-    
+
     lf.collect(engine="streaming").write_parquet(buffer, compression="zstd")
     buffer.seek(0)
 
@@ -64,7 +64,6 @@ def main():
 
     pipeline(DATA_PATH)
 
+
 if __name__ == "__main__":
     main()
-
-

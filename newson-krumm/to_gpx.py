@@ -29,6 +29,7 @@ def to_track(points: Sequence[GPSPoint]) -> Track:
 def resolve_absolute(path: Path) -> Path:
     return path.resolve().absolute()
 
+
 def ensure_filetype(path: Path, suffix: str) -> Path:
     if path.is_dir():
         return resolve_absolute(path / ("dataframe" + suffix))
