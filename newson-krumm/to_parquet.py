@@ -3,9 +3,14 @@ import polars as pl
 
 DATA_BASE_PATH = Path(__file__).parent / "data"
 
+RAW_DATA_PATH = DATA_BASE_PATH / "raw"
+
+
+# GPS DATA
+
 # Leitura do arquivo com schema explícito
 lf = pl.scan_csv(
-    DATA_BASE_PATH / "gps_data.txt",
+    RAW_DATA_PATH / "gps_data.txt",
     separator="\t",
     has_header=True,
     low_memory=True,
@@ -28,10 +33,47 @@ lf = lf.with_columns(
         minute=pl.col("time").dt.minute(),
         second=pl.col("time").dt.second(),
     ).alias("recorded_timestamp")
-).select("recorded_timestamp","lon", "lat")
+).select("recorded_timestamp", "lon", "lat")
 
 
 # Exportação para Parquet
 lf.collect(engine="streaming").write_parquet(
     DATA_BASE_PATH / "gps_data.parquet", compression="zstd"
 )
+
+
+# Ground Truth Data
+
+lf = pl.scan_csv(
+    RAW_DATA_PATH / "ground_truth_route.txt",
+    separator="\t",
+    has_header=True,
+    low_memory=True,
+    new_columns=["edge_id", "traversed"],
+)
+
+lf.collect(engine="streaming").write_parquet(
+    DATA_BASE_PATH / "ground_truth_route.parquet", compression="zstd"
+)
+
+# road_network_data
+
+df = pl.read_excel(
+    RAW_DATA_PATH / "road_network.xlsx",
+    has_header=True,
+)
+
+df = df.rename(
+    {
+        "Edge ID": "edge_id",
+        "From Node ID": "from_node_id",
+        "To Node ID": "to_node_id",
+        "Two Way": "two_way",
+        " Speed (m/s)": "speed",
+        "Vertex Count": "vertex_count",
+        "LINESTRING()": "linestring",
+    }
+)
+
+
+df.write_parquet(DATA_BASE_PATH / "road_network.parquet", compression="zstd")
