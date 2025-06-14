@@ -12,3 +12,6 @@ wheels/
 # data dirs
 */data/*
 graphhopper_data
+
+# heavy osm files
+osm
