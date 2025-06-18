@@ -4,10 +4,11 @@ services:
     container_name: import_osm
     environment:
       - JAVA_OPTS=-Xmx8g -Xms8g
-      - URL=https://download.geofabrik.de/north-america/us/washington-latest.osm.pbf
+      - FILE=/osm/newson_krumm_reconstructed.osm.pbf
       - ACTION=import
     volumes:
       - ./graphhopper_data:/data
+      - ./osm/pbf:/osm
     
   graphhopper:
     image: israelhikingmap/graphhopper:latest
