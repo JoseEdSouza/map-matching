@@ -17,5 +17,5 @@ chmod -R a+rw ./osm/pbf
 docker run --rm -it \
     -v "$(pwd)":/data \
     andygol/osmosis:0.49.2 \
-    --read-xml file="/data/osm/xml/newson_krumm_reconstructed.osm.xml" \
-    --write-pbf file="/data/osm/pbf/newson_krumm_reconstructed.osm.pbf"
+    --read-xml file="/data/osm/xml/newson_krumm_reconstructed_2.osm.xml" \
+    --write-pbf file="/data/osm/pbf/newson_krumm_reconstructed_2.osm.pbf"

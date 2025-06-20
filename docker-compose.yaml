@@ -4,12 +4,15 @@ services:
     container_name: import_osm
     environment:
       - JAVA_OPTS=-Xmx8g -Xms8g
-      - FILE=/osm/newson_krumm_reconstructed.osm.pbf
+      - FILE=/osm/newson_krumm_reconstructed_2.osm.pbf
       - ACTION=import
+      - CONFIG=/config/config.yaml
     volumes:
       - ./graphhopper_data:/data
       - ./osm/pbf:/osm
-    
+      - ./config:/config
+    entrypoint:  ["./graphhopper.sh", "-c", "/config/config.yaml"]
+
   graphhopper:
     image: israelhikingmap/graphhopper:latest
     container_name: graphhopper
@@ -18,6 +21,8 @@ services:
     environment:
       - JAVA_OPTS=-Xmx4g -Xms4g
       - ACTION=server
+      - CONFIG=/config/config.yml
     volumes:
       - ./graphhopper_data:/data
-        
+      - ./config:/config
+    entrypoint:  ["./graphhopper.sh", "-c", "/config/config.yaml"]
