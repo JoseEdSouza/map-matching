@@ -1,5 +1,5 @@
 import asyncio
-import requests
+import aiohttp
 from pathlib import Path
 
 DATA_BASE_PATH = Path(__file__).parent / "data" / "raw"
@@ -15,15 +15,15 @@ async def download_file(filename: str) -> None:
     """
     Download a file from the specified URL and save it to the data directory.
     """
-
-    response = requests.get(f"{BASE_URL}/{filename}", headers=HEADERS)
-
-    if response.status_code == 200:
-        with open(DATA_BASE_PATH / filename, "wb") as file:
-            file.write(response.content)
-        print(f"Downloaded {filename} successfully.")
-    else:
-        print(f"Failed to download {filename}. Status code: {response.status_code}")
+    async with aiohttp.ClientSession(headers=HEADERS) as session:
+        async with session.get(f"{BASE_URL}/{filename}") as response:
+            if response.status == 200:
+                content = await response.read()
+                with open(DATA_BASE_PATH / filename, "wb") as file:
+                    file.write(content)
+                print(f"Downloaded {filename} successfully.")
+            else:
+                print(f"Failed to download {filename}. Status code: {response.status}")
 
 
 async def main():
@@ -38,7 +38,7 @@ async def main():
         "ground_truth_route.txt",
     ]
 
-    asyncio.gather(*(download_file(filename) for filename in files_to_download))
+    await asyncio.gather(*(download_file(filename) for filename in files_to_download))
 
 
 if __name__ == "__main__":
