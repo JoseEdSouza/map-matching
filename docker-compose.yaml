@@ -26,3 +26,22 @@ services:
       - ./graphhopper_data:/data
       - ./config:/config
     entrypoint:  ["./graphhopper.sh", "-c", "/config/config.yaml"]
+
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend
+    container_name: osrm
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./osrm_data:/data
+    command: ["osrm-routed","--algorithm=mld", "/data/newson_krumm_reconstructed_2.osrm"]
+  
+  osrm_frontend:
+    image: osrm/osrm-frontend
+    container_name: osrm_frontend
+    ports:
+      - "9966:9966"
+    environment:
+      - OSRM_BACKEND_URL=http://osrm:5000
+    depends_on:
+      - osrm
