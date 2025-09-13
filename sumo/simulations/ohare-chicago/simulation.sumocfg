@@ -1,0 +1,10 @@
+<configuration>
+    <input>
+        <net-file value="ohare_network.net.xml"/>
+         <route-files value="ohare_routes.rou.xml"/>
+    </input>
+    <time>
+        <begin value="0"/>
+        <end value="3600"/>
+    </time>
+</configuration>
