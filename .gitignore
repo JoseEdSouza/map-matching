@@ -20,3 +20,6 @@ osrm_data
 
 # heavy osm files
 osm
+
+# network files
+*.net.xml
