@@ -1,25 +1,4 @@
-.PHONY: graphhopper-run graphhopper-setup osrm-run osrm-setup list stop
-
-graphhopper-run:
-	@echo "Running the application..."
-	@docker compose up graphhopper
-
-stop:
-	@echo "Stopping the application..."
-	@docker compose stop
-
-graphhopper-setup:
-	@echo "Importing map data..."
-	@docker compose run --rm import-map
-
-osrm-run:
-	@echo "Running OSRM..."
-	@docker compose up osrm
-
-osrm-setup:
-	@echo "Importing map data for OSRM..."
-	@sudo sh osrm.sh
-
+.PHONY: list
 list:
 	@echo "Available targets:"
 	@echo "-------------------------------------------------------------"
@@ -34,3 +13,29 @@ list:
 	@echo "| list                   | Show this help message           |"
 	@echo "| stop                   | Stop the current application     |"
 	@echo "-------------------------------------------------------------"
+
+.PHONY: graphhopper-run
+graphhopper-run:
+	@echo "Running the application..."
+	@docker compose up graphhopper
+
+.PHONY: stop
+stop:
+	@echo "Stopping the application..."
+	@docker compose stop
+
+.PHONY: graphhopper-setup
+graphhopper-setup:
+	@echo "Importing map data..."
+	@sudo sh ./tools/graphhopper/setup.sh
+
+.PHONY: osrm-run
+osrm-run:
+	@echo "Running OSRM..."
+	@docker compose up osrm osrm_frontend
+
+.PHONY: osrm-setup
+osrm-setup:
+	@echo "Importing map data for OSRM..."
+	@sudo sh ./tools/osrm/setup.sh
+
