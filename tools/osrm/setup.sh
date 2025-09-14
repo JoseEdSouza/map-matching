@@ -2,7 +2,7 @@
 
 # https://github.com/Project-OSRM/osrm-backend
 
-NETWORK_DIR=osm/pbf
+NETWORK_DIR=networks/pbf
 OSM_FILENAME="newson_krumm_reconstructed"
 
 

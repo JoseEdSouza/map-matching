@@ -22,7 +22,8 @@ data
 graphhopper_data
 osrm_data
 
-# heavy osm files
+# heavy osm files and road network files
+networks
 osm
 
 # network files

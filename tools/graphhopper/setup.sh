@@ -16,7 +16,7 @@
 #       - ./tools/graphhopper/config:/config
 #     entrypoint:  ["./graphhopper.sh", "-c", "/config/config.yaml"]
 
-ROAD_NETWORK_DIR=osm/pbf
+ROAD_NETWORK_DIR=networks/pbf
 FILENAME=newson_krumm_reconstructed.osm.pbf
 
 docker run --rm \
