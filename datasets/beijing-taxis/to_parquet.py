@@ -10,7 +10,7 @@ import polars as pl
 
 
 DATA_PATH = Path(__file__).parent / "data/release/taxi_log_2008_by_id"
-OUTPUT_PATH = Path(__file__).parent / "data" / "beijing_taxi_logs.parquet.zip"
+OUTPUT_PATH = Path(__file__).parent / "data/beijing_taxi_logs.parquet.zip"
 
 
 @transformer
