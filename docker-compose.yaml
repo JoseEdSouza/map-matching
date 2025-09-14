@@ -20,7 +20,7 @@ services:
       - "5000:5000"
     volumes:
       - ./tools/osrm/volumes/osrm_data:/data
-    command: ["osrm-routed","--algorithm=mld", "/data/newson_krumm_reconstructed_2.osrm"]
+    command: ["osrm-routed","--algorithm=mld", "/data/newson_krumm_reconstructed.osrm"]
   
   osrm_frontend:
     image: osrm/osrm-frontend
