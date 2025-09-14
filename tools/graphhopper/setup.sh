@@ -1,4 +1,7 @@
 
+# https://github.com/IsraelHikingMap/graphhopper-docker-image-push/blob/main/Dockerfile
+# https://github.com/IsraelHikingMap/graphhopper-docker-image-push
+
 #   import-map:
 #     image: israelhikingmap/graphhopper:latest
 #     container_name: import_osm

@@ -1,3 +1,5 @@
+# https://github.com/graphhopper/graphhopper/blob/master/docs/core/profiles.md
+
 graphhopper:
 
   # OpenStreetMap input file PBF or XML, can be changed via command line -Ddw.graphhopper.datareader.file=some.pbf
