@@ -1,7 +1,7 @@
 <configuration>
     <input>
-        <net-file value="ohare_network.net.xml"/>
-         <route-files value="ohare_routes.rou.xml"/>
+        <net-file value="ohare.net.xml"/>
+         <route-files value="ohare.rou.xml"/>
     </input>
     <time>
         <begin value="0"/>
