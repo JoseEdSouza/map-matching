@@ -12,7 +12,6 @@ OUTPUT_FILE="${OUTPUT_PATH}/${BASENAME}.taz.add.xml"
 
 export SUMO_HOME="/usr/share/sumo"
 
-# use sumo netconvert tool to convert the osm file to a sumo network file
 python3 $SUMO_HOME/tools/district/gridDistricts.py \
     --verbose \
     -n $NETWORK_FILE \
