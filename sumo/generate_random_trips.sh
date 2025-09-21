@@ -19,4 +19,5 @@ python3 $SUMO_HOME/tools/randomTrips.py \
     --begin 0 \
     --end 3600 \
     --period 2 \
+    --binomial 10 \
     --seed 42 
