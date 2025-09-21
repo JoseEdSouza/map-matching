@@ -12,7 +12,8 @@
     </time>
 
     <report>
-        <tripinfo-output value="tripinfo.xml"/>
+        <tripinfo-output value="./output/tripinfo.xml"/>
+        <fcd-output value="./output/fcd.xml"/>
     </report>
 
     <gui_only>
