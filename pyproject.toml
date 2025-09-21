@@ -12,7 +12,6 @@ dependencies = [
     "fastexcel>=0.14.0",
     "geopandas>=1.1.0",
     "geopy>=2.4.1",
-    "gloe>=0.7.0",
     "gpx>=0.2.1",
     "ipykernel>=6.29.5",
     "kagglehub>=0.3.12",
