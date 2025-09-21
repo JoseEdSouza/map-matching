@@ -14,6 +14,7 @@
     <report>
         <tripinfo-output value="./output/tripinfo.xml"/>
         <fcd-output value="./output/fcd.xml"/>
+        <fcd-output.geo value="true"/>
     </report>
 
     <gui_only>
