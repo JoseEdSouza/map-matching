@@ -16,6 +16,7 @@ cache
 # data dirs
 */data/*
 data
+output
 
 #volumes
 */volumes/*
