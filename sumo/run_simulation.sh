@@ -10,4 +10,5 @@ mkdir -p $OUTPUT_PATH
 
 sumo -c $SIMULATION_PATH \
     --fcd-output $OUTPUT_PATH/fcd_output.xml \
+    --fcd-output.geo \
     --tripinfo-output $OUTPUT_PATH/tripinfo.xml
