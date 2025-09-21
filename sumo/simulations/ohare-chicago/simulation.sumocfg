@@ -1,10 +1,21 @@
 <configuration>
     <input>
-        <net-file value="ohare.net.xml"/>
-         <route-files value="ohare.rou.xml"/>
+        <net-file value="ohare-filtered.net.xml"/>
+        <route-files value="ohare-filtered.rou.xml"/>
+        <additional-files value="ohare-filtered.taz.add.xml"/>
     </input>
+
     <time>
         <begin value="0"/>
         <end value="3600"/>
+        <step-length value="1.0"/>
     </time>
+
+    <report>
+        <tripinfo-output value="tripinfo.xml"/>
+    </report>
+
+    <gui_only>
+        <gui-settings-file value="view.xml"/>
+    </gui_only>
 </configuration>
