@@ -13,6 +13,7 @@ def resolve_absolute_path(relative_path: str) -> Path:
 # config
 N_SIMULATIONS = 500
 SIMULATION_TIME = 3600  # in seconds
+SIMULATION_STEP = 0.5  # in seconds
 
 # Paths
 SUMO_HOME = os.environ.get("SUMO_HOME", "/usr/share/sumo")
@@ -56,6 +57,7 @@ def main():
             "--clean-alt",
             "--output-last",
             "-l", str(N_SIMULATIONS),
+            "sumo--step-length", str(SIMULATION_STEP),
         ]
         # fmt: on
 
