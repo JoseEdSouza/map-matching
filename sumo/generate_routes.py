@@ -49,9 +49,9 @@ def main():
         cmd = [
             "python3",
             f"{SUMO_HOME}/tools/assign/duaIterate.py",
-            "-n",NETWORK_FILE,
-            "-t",TRIPS_FILE,
-            "-D",TAZ_FILE,
+            "-n", NETWORK_FILE,
+            "-t", TRIPS_FILE,
+            "-D", TAZ_FILE,
             "-R", str(SIMULATION_TIME),
             "--gzip",
             "--clean-alt",
