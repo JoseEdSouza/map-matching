@@ -11,42 +11,50 @@ OUTPUT_PATH = BASE_PATH / "simulations/ohare-chicago/output"
 def main():
     cmd = ["sumo", "-c", str(SIMULATION_PATH)]
 
-    vehicle_ids, positions, geo_positions, times = [], [], [], []
+    vehicle_ids, geo_positions, times = [], [], []
 
     traci.start(cmd)
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulation.step()
 
-        current_vehicles = traci.vehicle.getIDList()
-        if not current_vehicles:
+        current_vehicles = np.array(traci.vehicle.getIDList())
+        if len(current_vehicles) == 0:
             continue
 
-        current_pos = [traci.vehicle.getPosition(vid) for vid in current_vehicles]
-        current_geo = [traci.simulation.convertGeo(x, y) for x, y in current_pos]
-        current_time = traci.simulation.getTime()
+        current_pos = np.array(
+            [traci.vehicle.getPosition(vid) for vid in current_vehicles]
+        )
+        current_geo = np.array(
+            [traci.simulation.convertGeo(x, y) for x, y in current_pos]
+        )
+        current_time = np.array([traci.simulation.getTime()] * len(current_vehicles))
 
-        vehicle_ids.extend(current_vehicles)
-        positions.extend(current_pos)
-        geo_positions.extend(current_geo)
-        times.extend([current_time] * len(current_vehicles))
-    
+        vehicle_ids.append(current_vehicles)
+        geo_positions.append(current_geo)
+        times.append(current_time)
 
     traci.close()
 
-
     df = pl.DataFrame(
         {
-            "vehicle_id": np.array(vehicle_ids, dtype=str),
-            "position": np.array(positions, dtype=np.float64),
-            "geo_position": np.array(geo_positions, dtype=np.float64),
-            "time": np.array(times, dtype=np.float64),
+            "vehicle_id": pl.Series(
+                np.concatenate(vehicle_ids, dtype=np.str_), dtype=pl.Categorical
+            ),
+            "geo_position": np.concatenate(geo_positions, dtype=np.float64),
+            "time": np.concatenate(times, dtype=np.float64),
         }
+    )
+
+    df = df.with_columns(
+        pl.col("geo_position").arr.get(0).alias("lon"),
+        pl.col("geo_position").arr.get(1).alias("lat"),
     )
 
     df.write_parquet(OUTPUT_PATH / "fcd.parquet", mkdir=True, compression="zstd")
 
     print("Simulation data saved to", OUTPUT_PATH / "fcd.parquet")
     print(df)
+
 
 if __name__ == "__main__":
     main()
