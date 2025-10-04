@@ -22,9 +22,10 @@ class Matcher(BaseMatcher):
     def map_match(self, gpx_points: str) -> MatchResult:
         response = self.__request(gpx_points)
         points = polyline.decode(response["points"])
+        edge_ids = [str(edge) for (_, __, edge) in response["edge_ids"]]
         return MatchResult(
             points=[Coordinate(latitude=lat, longitude=lon) for lat, lon in points],
-            edge_ids=response["edge_ids"],
+            edge_ids=edge_ids,
         )
 
     def __request(self, gpx_points: str) -> dict[str, Any]:

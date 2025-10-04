@@ -43,7 +43,7 @@ def to_gpx(points: Sequence[GPSPoint]) -> str:
     Convert waypoints, tracks, and routes to a GPX object.
 
     :param waypoints: List of waypoints.
-    :return: GPX object containing the provided data.
+    :return: GPX object as a string.
     """
     gpx = GPX()
 
