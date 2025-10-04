@@ -36,3 +36,6 @@ dependencies = [
     "voila>=0.5.8",
     "zstd>=1.5.7.0",
 ]
+
+[tool.setuptools]
+packages = ["mmlib", "mmlib.graphhopper"]
