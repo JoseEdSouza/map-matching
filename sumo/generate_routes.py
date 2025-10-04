@@ -33,7 +33,7 @@ OUTPUT_FILE_ROUTES = Path(OUTPUT_PATH) / f"{BASENAME}.rou.xml"
 OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
 
-def try_parse_int(value: str, default: int) -> int:
+def try_parse_int(value: str, default: int | None = None) -> int | None:
     try:
         return int(value)
     except ValueError:
