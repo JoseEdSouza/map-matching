@@ -17,7 +17,9 @@
 #     entrypoint:  ["./graphhopper.sh", "-c", "/config/config.yaml"]
 
 ROAD_NETWORK_DIR=networks/pbf
-FILENAME=newson_krumm_reconstructed.osm.pbf
+FILENAME=ohare.osm.pbf
+
+rm -rf ./tools/graphhopper/volumes/graphhopper_data/*
 
 docker run --rm \
     -e JAVA_OPTS="-Xmx8g -Xms8g" \
