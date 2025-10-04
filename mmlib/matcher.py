@@ -6,21 +6,23 @@ from dataclasses import dataclass
 @dataclass
 class Coordinate:
     """Represents a geographical coordinate."""
+
     latitude: float
     longitude: float
-
 
     def to_tuple(self) -> tuple[float, float]:
         """Convert the coordinate to a tuple representation.
 
-        Returns: 
+        Returns:
         tuple[float, float]: The latitude and longitude as a tuple.
         """
         return (self.latitude, self.longitude)
 
+
 @dataclass
 class MatchResult:
     """Represents the result of a map matching operation."""
+
     points: list[Coordinate]
     edge_ids: list[str]
 

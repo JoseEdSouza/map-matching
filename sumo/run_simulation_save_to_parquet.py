@@ -33,7 +33,9 @@ def main():
         current_geo = np.array(
             [traci.simulation.convertGeo(x, y) for x, y in current_pos]
         )
-        current_edges = np.array([traci.vehicle.getRoadID(vid) for vid in current_vehicles])
+        current_edges = np.array(
+            [traci.vehicle.getRoadID(vid) for vid in current_vehicles]
+        )
 
         current_time = np.array([traci.simulation.getTime()] * len(current_vehicles))
 
