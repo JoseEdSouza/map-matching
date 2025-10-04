@@ -1,14 +1,30 @@
 from pathlib import Path
+import re
 from typing import cast
+
 import traci
 import numpy as np
 import polars as pl
+from pyproj import Geod
 
 BASE_PATH = Path(__file__).parent.absolute()
 SIMULATION_PATH = BASE_PATH / "simulations/ohare-chicago/simulation.sumocfg"
 OUTPUT_PATH = BASE_PATH / "simulations/ohare-chicago/output"
 NOISE_METERS_STD: float | None = 5
 RANDOM_SEED = 42
+
+
+def clean_edge_id(edge_ids: np.ndarray) -> np.ndarray:
+    regex = r"^\D*(\d+).*$"
+    cleaned = [""] * len(edge_ids)
+    for i, eid in enumerate(edge_ids):
+        eid_str = str(eid).strip()
+        matched = re.match(regex, eid_str)
+        if matched:
+            cleaned[i] = matched.group(1)
+        else:
+            cleaned[i] = eid
+    return np.array(cleaned, dtype=np.str_)
 
 
 def main():
@@ -34,8 +50,9 @@ def main():
             [traci.simulation.convertGeo(x, y) for x, y in current_pos]
         )
         current_edges = np.array(
-            [traci.vehicle.getRoadID(vid) for vid in current_vehicles]
+            [str(traci.vehicle.getRoadID(vid)) for vid in current_vehicles]
         )
+        current_edges = clean_edge_id(current_edges)
 
         current_time = np.array([traci.simulation.getTime()] * len(current_vehicles))
 
@@ -70,17 +87,21 @@ def main():
     print(df)
 
     if NOISE_METERS_STD is not None:
+        geod = Geod(ellps="WGS84")
         rng = np.random.default_rng(RANDOM_SEED)
 
-        # Approximate conversion from meters to degrees at the equator
-        meters_to_degrees = 1 / 111320
-        noise_std_degrees = NOISE_METERS_STD * meters_to_degrees
+        lon = df["lon"].to_numpy()
+        lat = df["lat"].to_numpy()
 
-        noise_lat = rng.normal(0, noise_std_degrees, size=len(df))
-        noise_lon = rng.normal(0, noise_std_degrees, size=len(df))
+        noise = rng.normal(0, NOISE_METERS_STD, size=(2, len(df)))
+        noise_east = noise[0]
+        noise_north = noise[1]
 
-        lat = df["lat"].to_numpy() + noise_lat
-        lon = df["lon"].to_numpy() + noise_lon
+        azimuth_east = np.full(len(df), 90)
+        azimuth_north = np.full(len(df), 0)
+
+        lon_temp, lat_temp, _ =  geod.fwd(lon, lat, azimuth_east, noise_east)
+        lon_noisy, lat_noisy, _ = geod.fwd(lon_temp, lat_temp, azimuth_north, noise_north)
 
         geo_positions_noisy = np.column_stack((lon, lat))
 
@@ -88,9 +109,9 @@ def main():
             pl.Series(geo_positions_noisy, dtype=pl.List(pl.Float64)).alias(
                 "geo_position"
             ),
-            pl.Series(lat, dtype=pl.Float64).alias("lat"),
-            pl.Series(lon, dtype=pl.Float64).alias("lon"),
-        ).drop("edge_id")
+            pl.Series(lat_noisy, dtype=pl.Float64).alias("lat"),
+            pl.Series(lon_noisy, dtype=pl.Float64).alias("lon"),
+        )
 
         noise_df.write_parquet(
             OUTPUT_PATH / "fcd_noisy.parquet", mkdir=True, compression="zstd"
