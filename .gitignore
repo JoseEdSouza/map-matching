@@ -6,6 +6,10 @@ dist/
 wheels/
 *.egg-info
 
+# ide and text editor settings
+.vscode/
+.idea/
+
 # cache
 .cache/
 cache
