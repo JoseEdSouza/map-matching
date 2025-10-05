@@ -17,7 +17,7 @@
 #     entrypoint:  ["./graphhopper.sh", "-c", "/config/config.yaml"]
 
 ROAD_NETWORK_DIR=networks/pbf
-FILENAME=ohare.osm.pbf
+FILENAME=ohare-filtered.osm.pbf
 
 rm -rf ./tools/graphhopper/volumes/graphhopper_data/*
 
