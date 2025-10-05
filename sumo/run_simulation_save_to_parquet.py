@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 from typing import cast
 
 import traci
@@ -14,19 +13,6 @@ NOISE_METERS_STD: float | None = 5
 RANDOM_SEED = 42
 
 
-def clean_edge_id(edge_ids: np.ndarray) -> np.ndarray:
-    regex = r"^\D*(\d+).*$"
-    cleaned = [""] * len(edge_ids)
-    for i, eid in enumerate(edge_ids):
-        eid_str = str(eid).strip()
-        matched = re.match(regex, eid_str)
-        if matched:
-            cleaned[i] = matched.group(1)
-        else:
-            cleaned[i] = eid
-    return np.array(cleaned, dtype=np.str_)
-
-
 def main():
     cmd = ["sumo", "-c", str(SIMULATION_PATH)]
 
@@ -39,21 +25,26 @@ def main():
     while cast(int, traci.simulation.getMinExpectedNumber()) > 0:
         traci.simulation.step()
 
-        current_vehicles = np.array(traci.vehicle.getIDList())
+        current_vehicles = pl.Series(traci.vehicle.getIDList(), dtype=pl.Categorical)
         if len(current_vehicles) == 0:
             continue
 
-        current_pos = np.array(
-            [traci.vehicle.getPosition(vid) for vid in current_vehicles]
+        current_pos = pl.Series(
+            [traci.vehicle.getPosition(vid) for vid in current_vehicles],
+            dtype=pl.Array(pl.Float64, shape=2),
         )
-        current_geo = np.array(
-            [traci.simulation.convertGeo(x, y) for x, y in current_pos]
+        current_geo = pl.Series(
+            [traci.simulation.convertGeo(x, y) for x, y in current_pos],
+            dtype=pl.Array(pl.Float64, shape=2),
         )
-        current_edges = np.array(
-            [str(traci.vehicle.getRoadID(vid)) for vid in current_vehicles]
+        current_edges = pl.Series(
+            [str(traci.vehicle.getRoadID(vid)) for vid in current_vehicles],
+            dtype=pl.Categorical,
         )
 
-        current_time = np.array([traci.simulation.getTime()] * len(current_vehicles))
+        current_time = pl.Series(
+            [traci.simulation.getTime()] * len(current_vehicles), dtype=pl.Float64
+        )
 
         vehicle_ids.append(current_vehicles)
         geo_positions.append(current_geo)
@@ -62,25 +53,31 @@ def main():
 
     traci.close()
 
-    edges = np.concatenate(edges, dtype=np.str_)
-
-    df = pl.DataFrame(
+    lf = pl.LazyFrame(
         {
-            "vehicle_id": pl.Series(
-                np.concatenate(vehicle_ids, dtype=np.str_), dtype=pl.Categorical
+            "vehicle_id": pl.Series(pl.concat(vehicle_ids), dtype=pl.Categorical),
+            "geo_position": pl.Series(
+                pl.concat(geo_positions), dtype=pl.Array(pl.Float64, shape=2)
             ),
-            "geo_position": np.concatenate(geo_positions, dtype=np.float64),
-            "time": np.concatenate(times, dtype=np.float64),
-            "edge_id": pl.Series(clean_edge_id(edges), dtype=pl.Categorical),
-            "raw_edge_id": pl.Series(edges, dtype=pl.Categorical),
+            "time": pl.concat(times),
+            "raw_edge_id": pl.concat(edges),
         }
     )
 
-    df = df.with_columns(
+    lf = lf.with_columns(
+        pl.col("raw_edge_id")
+        .cast(pl.String)
+        .str.extract(r"^\D*(\d+).*$", 1)
+        .alias("edge_id")
+        .cast(pl.Categorical),
+    )
+
+    lf = lf.with_columns(
         pl.col("geo_position").arr.get(0).alias("lon"),
         pl.col("geo_position").arr.get(1).alias("lat"),
     )
 
+    df = lf.collect()
     df.write_parquet(OUTPUT_PATH / "fcd.parquet", mkdir=True, compression="zstd")
 
     print("Simulation data saved to", OUTPUT_PATH / "fcd.parquet")
@@ -108,9 +105,10 @@ def main():
         geo_positions_noisy = np.column_stack((lon, lat))
 
         noise_df = df.with_columns(
-            pl.Series(geo_positions_noisy, dtype=pl.List(pl.Float64)).alias(
-                "geo_position"
-            ),
+            pl.Series(
+                geo_positions_noisy,
+                dtype=pl.Array(pl.Float64, shape=2),
+            ).alias("geo_position"),
             pl.Series(lat_noisy, dtype=pl.Float64).alias("lat"),
             pl.Series(lon_noisy, dtype=pl.Float64).alias("lon"),
         )
