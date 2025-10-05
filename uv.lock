@@ -502,6 +502,7 @@ dependencies = [
     { name = "fastexcel" },
     { name = "geopandas" },
     { name = "geopy" },
+    { name = "gloe" },
     { name = "gpx" },
     { name = "ipykernel" },
     { name = "kagglehub" },
@@ -536,6 +537,7 @@ requires-dist = [
     { name = "fastexcel", specifier = ">=0.14.0" },
     { name = "geopandas", specifier = ">=1.1.0" },
     { name = "geopy", specifier = ">=2.4.1" },
+    { name = "gloe", specifier = ">=0.7.0" },
     { name = "gpx", specifier = ">=0.2.1" },
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "kagglehub", specifier = ">=0.3.12" },
@@ -804,6 +806,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0e/fd/ef6d53875ceab72c1fad22dbed5ec1ad04eb378c2251a6a8024bad890c3b/geopy-2.4.1.tar.gz", hash = "sha256:50283d8e7ad07d89be5cb027338c6365a32044df3ae2556ad3f52f4840b3d0d1", size = 117625, upload-time = "2023-11-23T21:49:32.734Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/15/cf2a69ade4b194aa524ac75112d5caac37414b20a3a03e6865dfe0bd1539/geopy-2.4.1-py3-none-any.whl", hash = "sha256:ae8b4bc5c1131820f4d75fce9d4aaaca0c85189b3aa5d64c3dcaf5e3b7b882a7", size = 125437, upload-time = "2023-11-23T21:49:30.421Z" },
+]
+
+[[package]]
+name = "gloe"
+version = "0.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions", version = "4.14.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
+    { name = "typing-extensions", version = "4.15.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/85/74/96ab832c8f575aa3ec345228fe73c20c3a322ce53ecfeeb1514a58370a8d/gloe-0.7.0.tar.gz", hash = "sha256:91e9601643f9ff806db8bfcdb19cdfe7461520a322a3aba544a98db790002be8", size = 265141, upload-time = "2025-02-03T23:59:03.127Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/92/57/e47cb1bfd9e38744a783baf0d8042607540e0f6465d21caa8b1901fd4886/gloe-0.7.0-py3-none-any.whl", hash = "sha256:018d04617e8a971bcddfb1cf8a2d770efa1eb352dcd74b0abf6d3233b7ff4d0f", size = 44499, upload-time = "2025-02-03T23:59:01.525Z" },
 ]
 
 [[package]]
