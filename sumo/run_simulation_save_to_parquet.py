@@ -16,10 +16,10 @@ RANDOM_SEED = 42
 def main():
     cmd = ["sumo", "-c", str(SIMULATION_PATH)]
 
-    vehicle_ids = []
-    geo_positions = []
-    times = []
-    edges = []
+    vehicle_ids = pl.Series(dtype=pl.Categorical)
+    geo_positions = pl.Series(dtype=pl.Array(pl.Float64, shape=2))
+    times = pl.Series(dtype=pl.Float64)
+    edges = pl.Series(dtype=pl.Categorical)
 
     traci.start(cmd)
     while cast(int, traci.simulation.getMinExpectedNumber()) > 0:
@@ -29,21 +29,22 @@ def main():
         if len(current_vehicles) == 0:
             continue
 
-        current_pos = pl.Series(
-            [traci.vehicle.getPosition(vid) for vid in current_vehicles],
-            dtype=pl.Array(pl.Float64, shape=2),
-        )
-        current_geo = pl.Series(
-            [traci.simulation.convertGeo(x, y) for x, y in current_pos],
-            dtype=pl.Array(pl.Float64, shape=2),
-        )
-        current_edges = pl.Series(
-            [str(traci.vehicle.getRoadID(vid)) for vid in current_vehicles],
-            dtype=pl.Categorical,
+        current_pos = current_vehicles.map_elements(
+            traci.vehicle.getPosition,
+            return_dtype=pl.Array(pl.Float64, shape=2),
         )
 
+        current_geo = current_pos.map_elements(
+            lambda pos: traci.simulation.convertGeo(pos[0], pos[1]),
+            return_dtype=pl.List(pl.Float64),
+        ).cast(pl.Array(pl.Float64, shape=2))
+
+        current_edges = current_vehicles.map_elements(
+            traci.vehicle.getRoadID, return_dtype=pl.String
+        ).cast(pl.Categorical)
+
         current_time = pl.Series(
-            [traci.simulation.getTime()] * len(current_vehicles), dtype=pl.Float64
+            np.full(len(current_vehicles), traci.simulation.getTime()), dtype=pl.Float64
         )
 
         vehicle_ids.append(current_vehicles)
@@ -55,12 +56,10 @@ def main():
 
     lf = pl.LazyFrame(
         {
-            "vehicle_id": pl.Series(pl.concat(vehicle_ids), dtype=pl.Categorical),
-            "geo_position": pl.Series(
-                pl.concat(geo_positions), dtype=pl.Array(pl.Float64, shape=2)
-            ),
-            "time": pl.concat(times),
-            "raw_edge_id": pl.concat(edges),
+            "vehicle_id": vehicle_ids,
+            "geo_position": geo_positions,
+            "time": times,
+            "raw_edge_id": edges,
         }
     )
 
