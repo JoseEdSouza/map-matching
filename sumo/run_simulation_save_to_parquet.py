@@ -52,7 +52,6 @@ def main():
         current_edges = np.array(
             [str(traci.vehicle.getRoadID(vid)) for vid in current_vehicles]
         )
-        current_edges = clean_edge_id(current_edges)
 
         current_time = np.array([traci.simulation.getTime()] * len(current_vehicles))
 
@@ -63,6 +62,8 @@ def main():
 
     traci.close()
 
+    edges = np.concatenate(edges, dtype=np.str_)
+
     df = pl.DataFrame(
         {
             "vehicle_id": pl.Series(
@@ -70,9 +71,8 @@ def main():
             ),
             "geo_position": np.concatenate(geo_positions, dtype=np.float64),
             "time": np.concatenate(times, dtype=np.float64),
-            "edge_id": pl.Series(
-                np.concatenate(edges, dtype=np.str_), dtype=pl.Categorical
-            ),
+            "edge_id": pl.Series(clean_edge_id(edges), dtype=pl.Categorical),
+            "raw_edge_id": pl.Series(edges, dtype=pl.Categorical),
         }
     )
 
@@ -100,8 +100,10 @@ def main():
         azimuth_east = np.full(len(df), 90)
         azimuth_north = np.full(len(df), 0)
 
-        lon_temp, lat_temp, _ =  geod.fwd(lon, lat, azimuth_east, noise_east)
-        lon_noisy, lat_noisy, _ = geod.fwd(lon_temp, lat_temp, azimuth_north, noise_north)
+        lon_temp, lat_temp, _ = geod.fwd(lon, lat, azimuth_east, noise_east)
+        lon_noisy, lat_noisy, _ = geod.fwd(
+            lon_temp, lat_temp, azimuth_north, noise_north
+        )
 
         geo_positions_noisy = np.column_stack((lon, lat))
 
