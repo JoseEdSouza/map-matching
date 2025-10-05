@@ -55,12 +55,12 @@ def main():
     traci.close()
 
     lf = pl.LazyFrame(
-        {
-            "vehicle_id": vehicle_ids,
-            "geo_position": geo_positions,
-            "time": times,
-            "raw_edge_id": edges,
-        }
+        (
+            vehicle_ids.alias("vehicle_id"),
+            geo_positions.alias("geo_position"),
+            times.alias("time"),
+            edges.alias("raw_edge_id"),
+        )
     )
 
     lf = lf.with_columns(
