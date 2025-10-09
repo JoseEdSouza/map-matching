@@ -164,18 +164,25 @@ def __map_osmid_to_edges(graph: nx.Graph) -> dict[str, list[tuple[int, int]]]:
 type edge_id = str
 
 
-
 def plot_map_matching_from_osmid(
     graph: nx.Graph,
     ground_truth_osmid_path: list[edge_id],
     map_matched_osmid_path: list[edge_id],
 ):
+    """
+    Plota caminhos ground truth e map matched em um grafo OSMnx a partir de listas de osmids.
+    Corrigida para lidar com osmids múltiplos, tipos variados e inconsistências.
+    """
+
+    # --- Node positions ---
     pos = {node: (data["x"], data["y"]) for node, data in graph.nodes(data=True)}
+
+    # --- OSMID → Edges map (robusta) ---
     osmid_to_edge_map = __map_osmid_to_edges(graph)
 
-    # --- Helper: ordered path trace ---
+    # --- Trace builder ---
     def create_ordered_path_trace(osmid_list, color, name, width=4):
-        lons, lats = [], []
+        x_coords, y_coords = [], []
         prev_coords = None
         missing = []
 
@@ -188,72 +195,118 @@ def plot_map_matching_from_osmid(
             for u, v in candidates:
                 ux, uy = pos[u]
                 vx, vy = pos[v]
+
                 segment = [(ux, uy), (vx, vy)]
 
+                # if previous segment doesn't end at this start, try to reverse for continuity
                 if prev_coords and prev_coords != segment[0]:
                     if prev_coords == segment[1]:
                         segment.reverse()
-                    elif not __distance(prev_coords, segment[0]) < 0.00005:
-                        lons.append(None)
-                        lats.append(None)
+                    elif (
+                        not __distance(prev_coords, segment[0]) < 0.00005
+                    ):  # ~5m tolerance
+                        # if still not connected, insert a gap (None)
+                        x_coords.append(None)
+                        y_coords.append(None)
 
+                # add to path
                 for x, y in segment:
-                    lons.append(x)
-                    lats.append(y)
+                    x_coords.append(x)
+                    y_coords.append(y)
 
                 prev_coords = segment[-1]
 
         if missing:
-            print(f"⚠️ Missing {len(missing)} osmids: {missing[:5]}{'...' if len(missing) > 5 else ''}")
+            print(
+                f"⚠️  Warning: {len(missing)} OSMIDs not found in graph: {missing[:5]}{'...' if len(missing) > 5 else ''}"
+            )
 
-        return go.Scattermapbox(
-            lon=lons,
-            lat=lats,
+        return go.Scatter(
+            x=x_coords,
+            y=y_coords,
             mode="lines",
             line=dict(color=color, width=width),
             name=name,
             visible=True,
         )
 
-    # --- Figure ---
+    # --- Figure data ---
     traces = []
 
-    # Ground truth
-    if ground_truth_osmid_path:
-        traces.append(
-            create_ordered_path_trace(ground_truth_osmid_path, "green", "Ground Truth")
+    # 0. Background
+    x_bg, y_bg = [], []
+    for u, v in graph.edges():
+        x_bg.extend([pos[u][0], pos[v][0], None])
+        y_bg.extend([pos[u][1], pos[v][1], None])
+    traces.append(
+        go.Scatter(
+            x=x_bg,
+            y=y_bg,
+            mode="lines",
+            line=dict(color="lightgray", width=1),
+            name="Street Network",
+            hoverinfo="none",
+            visible=True,
         )
-
-    # Map matched
-    if map_matched_osmid_path:
-        traces.append(
-            create_ordered_path_trace(map_matched_osmid_path, "blue", "Map Matched")
-        )
+    )
 
     gt_edges = set(ground_truth_osmid_path)
     mm_edges = set(map_matched_osmid_path)
+
     matched = gt_edges & mm_edges
     added = mm_edges - gt_edges
     missing = gt_edges - mm_edges
     difference = gt_edges ^ mm_edges
 
-    # --- Layout with Mapbox ---
+    # 1. Ground Truth
+    if ground_truth_osmid_path:
+        traces.append(
+            create_ordered_path_trace(ground_truth_osmid_path, "green", "Ground Truth")
+        )
+
+    # 2. Map Matched
+    if map_matched_osmid_path:
+        traces.append(
+            create_ordered_path_trace(map_matched_osmid_path, "blue", "Map Matched")
+        )
+
+    # --- Layout e botões ---
+    toggle_gt = dict(
+        label="Toggle Ground Truth",
+        method="update",
+        args=[{"visible": [True, False, True]}],
+        args2=[{"visible": [True, True, True]}],
+    )
+
+    toggle_mm = dict(
+        label="Toggle Map Matched",
+        method="update",
+        args=[{"visible": [True, True, False]}],
+        args2=[{"visible": [True, True, True]}],
+    )
+
+    toggle_both = dict(
+        label="Toggle Both",
+        method="update",
+        args=[{"visible": [True, False, False]}],
+        args2=[{"visible": [True, True, True]}],
+    )
+
     fig = go.Figure(data=traces)
-
-    # Compute approximate center of map
-    lons = [data["x"] for _, data in graph.nodes(data=True)]
-    lats = [data["y"] for _, data in graph.nodes(data=True)]
-    center_lon, center_lat = (sum(lons) / len(lons), sum(lats) / len(lats))
-
     fig.update_layout(
-        mapbox=dict(
-            style="carto-positron",  # or "open-street-map", "stamen-terrain", "satellite-streets"
-            center=dict(lat=center_lat, lon=center_lon),
-            zoom=13,
-        ),
-        margin=dict(l=10, r=10, t=40, b=60),
-        height=700,
         title="Map Matching Visualization",
+        showlegend=True,
+        legend=dict(x=0.01, y=0.99),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+            scaleanchor="x",
+            scaleratio=1,
+        ),
+        plot_bgcolor="white",
+        margin=dict(l=10, r=10, t=40, b=10),
         updatemenus=[
             dict(
                 type="buttons",
@@ -262,28 +315,13 @@ def plot_map_matching_from_osmid(
                 y=1.1,
                 xanchor="center",
                 yanchor="top",
-                buttons=[
-                    dict(
-                        label="Toggle Ground Truth",
-                        method="update",
-                        args=[{"visible": [False, True]}],
-                        args2=[{"visible": [True, True]}],
-                    ),
-                    dict(
-                        label="Toggle Map Matched",
-                        method="update",
-                        args=[{"visible": [True, False]}],
-                        args2=[{"visible": [True, True]}],
-                    ),
-                    dict(
-                        label="Toggle Both",
-                        method="update",
-                        args=[{"visible": [False, False]}],
-                        args2=[{"visible": [True, True]}],
-                    ),
-                ],
+                buttons=[toggle_gt, toggle_mm, toggle_both],
             )
         ],
+    )
+
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=40, b=60),  # more space below
         annotations=[
             dict(
                 text=(
@@ -296,12 +334,20 @@ def plot_map_matching_from_osmid(
                 xref="paper",
                 yref="paper",
                 x=0.5,
-                y=-0.1,
+                y=-0.15,  # slightly below the plot
                 xanchor="center",
                 font=dict(size=12),
             )
         ],
     )
 
-    # Enable zoom + drag
+    fig.update_layout(
+        height=700
+    )
+
+    fig.update_layout(
+        dragmode="pan",
+        hovermode="closest",
+    )
+
     fig.show(config=dict(scrollZoom=True, displayModeBar=True))
