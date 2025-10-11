@@ -154,15 +154,16 @@ def __map_osmid_to_edges(graph: nx.Graph) -> dict[str, list[tuple[int, int]]]:
         for osm in osmids:
             osmid_str = str(osm)
             osmid_to_edge_map.setdefault(osmid_str, []).append((u, v))
-
+        
         osmid_to_edge_map.setdefault(str(u), []).append((u, v))
-        osmid_to_edge_map.setdefault(str(v), []).append((u, v))
+        
+    for node in graph.nodes():
+        osmid_to_edge_map.setdefault(str(node), []).append((node, node))
 
     return osmid_to_edge_map
 
 
 type edge_id = str
-
 
 def plot_map_matching_from_osmid(
     graph: nx.Graph,
@@ -172,6 +173,7 @@ def plot_map_matching_from_osmid(
     """
     Plota caminhos ground truth e map matched em um grafo OSMnx a partir de listas de osmids.
     Corrigida para lidar com osmids múltiplos, tipos variados e inconsistências.
+    Mostra o osmid no hover dos edges.
     """
 
     # --- Node positions ---
@@ -183,6 +185,7 @@ def plot_map_matching_from_osmid(
     # --- Trace builder ---
     def create_ordered_path_trace(osmid_list, color, name, width=4):
         x_coords, y_coords = [], []
+        hover_texts = []
         prev_coords = None
         missing = []
 
@@ -208,11 +211,13 @@ def plot_map_matching_from_osmid(
                         # if still not connected, insert a gap (None)
                         x_coords.append(None)
                         y_coords.append(None)
+                        hover_texts.append(None)
 
                 # add to path
-                for x, y in segment:
+                for (x, y) in segment:
                     x_coords.append(x)
                     y_coords.append(y)
+                    hover_texts.append(f"osmid: {osmid}")
 
                 prev_coords = segment[-1]
 
@@ -228,16 +233,21 @@ def plot_map_matching_from_osmid(
             line=dict(color=color, width=width),
             name=name,
             visible=True,
+            hoverinfo="text",
+            text=hover_texts,
         )
 
     # --- Figure data ---
     traces = []
 
     # 0. Background
-    x_bg, y_bg = [], []
-    for u, v in graph.edges():
+    x_bg, y_bg, hover_bg = [], [], []
+    for u, v, data in graph.edges(data=True):
         x_bg.extend([pos[u][0], pos[v][0], None])
         y_bg.extend([pos[u][1], pos[v][1], None])
+        osmid = data.get("osmid", "")
+        hover_bg.extend([f"osmid: {osmid}", f"osmid: {osmid}", None])
+    
     traces.append(
         go.Scatter(
             x=x_bg,
@@ -245,18 +255,11 @@ def plot_map_matching_from_osmid(
             mode="lines",
             line=dict(color="lightgray", width=1),
             name="Street Network",
-            hoverinfo="none",
+            hoverinfo="text",
+            text=hover_bg,
             visible=True,
         )
     )
-
-    gt_edges = set(ground_truth_osmid_path)
-    mm_edges = set(map_matched_osmid_path)
-
-    matched = gt_edges & mm_edges
-    added = mm_edges - gt_edges
-    missing = gt_edges - mm_edges
-    difference = gt_edges ^ mm_edges
 
     # 1. Ground Truth
     if ground_truth_osmid_path:
@@ -269,30 +272,58 @@ def plot_map_matching_from_osmid(
         traces.append(
             create_ordered_path_trace(map_matched_osmid_path, "blue", "Map Matched")
         )
-
-    # --- Layout e botões ---
-    toggle_gt = dict(
-        label="Toggle Ground Truth",
-        method="update",
-        args=[{"visible": [True, False, True]}],
-        args2=[{"visible": [True, True, True]}],
+    
+    node_markers = go.Scatter(
+        x=[x for x, y in pos.values()],
+        y=[y for x, y in pos.values()],
+        mode="markers",
+        marker=dict(size=2, color="black"),
+        name="Nodes",
+        hoverinfo="text",
+        text=[f"NodeID: {node}" for node in graph.nodes()],
+        visible=False,
     )
 
-    toggle_mm = dict(
-        label="Toggle Map Matched",
+
+
+    # --- Layout e botões ---
+    show_nodes = dict(
+        label="Show Nodes",
+        method="update",
+        args=[{"visible": [True, True, True, True]}],
+        args2=[{"visible": [True, True, True, False]}],
+    )
+
+    only_gt = dict(
+        label="Only Ground Truth",
         method="update",
         args=[{"visible": [True, True, False]}],
         args2=[{"visible": [True, True, True]}],
     )
 
-    toggle_both = dict(
-        label="Toggle Both",
+    only_mm = dict(
+        label="Only Map Matched",
+        method="update",
+        args=[{"visible": [True, False, True]}],
+        args2=[{"visible": [True, True, True]}],
+    )
+
+    both = dict(
+        label="Both",
+        method="update",
+        args=[{"visible": [True, True, True]}],
+        args2=[{"visible": [True, True, True]}],
+    )
+
+    neither = dict(
+        label="Neither",
         method="update",
         args=[{"visible": [True, False, False]}],
         args2=[{"visible": [True, True, True]}],
     )
 
     fig = go.Figure(data=traces)
+    fig.add_trace(node_markers)
     fig.update_layout(
         title="Map Matching Visualization",
         showlegend=True,
@@ -315,10 +346,18 @@ def plot_map_matching_from_osmid(
                 y=1.1,
                 xanchor="center",
                 yanchor="top",
-                buttons=[toggle_gt, toggle_mm, toggle_both],
+                buttons=[both, only_gt, only_mm, neither, show_nodes],
             )
         ],
     )
+
+    gt_edges = set(ground_truth_osmid_path)
+    mm_edges = set(map_matched_osmid_path)
+
+    matched = gt_edges & mm_edges
+    added = mm_edges - gt_edges
+    missing = gt_edges - mm_edges
+    difference = gt_edges ^ mm_edges
 
     fig.update_layout(
         margin=dict(l=10, r=10, t=40, b=60),  # more space below
@@ -334,12 +373,14 @@ def plot_map_matching_from_osmid(
                 xref="paper",
                 yref="paper",
                 x=0.5,
-                y=-0.15,  # slightly below the plot
+                y=-0.1,
                 xanchor="center",
                 font=dict(size=12),
             )
         ],
     )
+
+
 
     fig.update_layout(
         height=700

@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 from dataclasses import dataclass
 
+from mmlib.gpx import GPSPoint
+
 
 @dataclass
 class Coordinate:
@@ -23,15 +25,30 @@ class Coordinate:
 class MatchResult:
     """Represents the result of a map matching operation."""
 
+    _matcher_name: str
+    _original_points: list[Coordinate]
     points: list[Coordinate]
     edge_ids: list[str]
+
+    def plot(self) -> None:
+        """Plot the matched points and edges using folium."""
+        from .mmplot import  plot_trajectories
+        plot_trajectories(
+            original=[pt.to_tuple() for pt in self._original_points],
+            calculated=[pt.to_tuple() for pt in self.points],
+            title=f"Map Matching - {self._matcher_name}",
+            original_label="Original GPS",
+            calculated_label=f"{self._matcher_name} Match",
+            show_original_line=False,
+            zoom=16,
+        )
 
 
 class BaseMatcher(ABC):
     """Matcher is a base class for map matching implementations."""
 
     @abstractmethod
-    def map_match(self, gpx_points: str) -> MatchResult:
+    def map_match(self, points: list[GPSPoint]) -> MatchResult:
         """Map match the provided GPX points.
 
         Args:

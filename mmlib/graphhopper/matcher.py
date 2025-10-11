@@ -4,6 +4,7 @@ from typing import Any
 import polyline
 import requests
 
+from mmlib.gpx import GPSPoint, to_gpx
 from mmlib.matcher import Coordinate, MatchResult
 from mmlib.matcher import BaseMatcher
 
@@ -19,12 +20,15 @@ class Matcher(BaseMatcher):
         if gps_accuracy is not None:
             self._gps_accuracy = gps_accuracy
 
-    def map_match(self, gpx_points: str) -> MatchResult:
+    def map_match(self, points: list[GPSPoint]) -> MatchResult:
+        gpx_points = to_gpx(points)
         response = self.__request(gpx_points)
-        points = polyline.decode(response["points"])
+        res_points = polyline.decode(response["points"])
         edge_ids = [str(edge) for (_, __, edge) in response["edge_ids"]]
         return MatchResult(
-            points=[Coordinate(latitude=lat, longitude=lon) for lat, lon in points],
+            _matcher_name="GraphHopper",
+            _original_points=[Coordinate(latitude=lat, longitude=lon) for lat, lon, _ in points],
+            points=[Coordinate(latitude=lat, longitude=lon) for lat, lon in res_points],
             edge_ids=edge_ids,
         )
 
