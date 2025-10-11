@@ -1,5 +1,5 @@
 [project]
-name = "dataset"
+name = "map-matching"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -14,10 +14,12 @@ dependencies = [
     "geopy>=2.4.1",
     "gloe>=0.7.0",
     "gpx>=0.2.1",
+    "igraph>=0.11.9",
     "ipykernel>=6.29.5",
     "kagglehub>=0.3.12",
     "matplotlib>=3.10.3",
     "nbformat>=5.10.4",
+    "notebook>=7.4.7",
     "numpy>=2.2.6",
     "osmnx>=2.0.6",
     "pandas>=2.2.3",
@@ -26,6 +28,7 @@ dependencies = [
     "polars>=1.30.0",
     "polyline>=2.0.2",
     "pyarrow>=20.0.0",
+    "pymove>=3.0.0",
     "pyrefly>=0.16.2",
     "requests>=2.32.3",
     "ruff>=0.11.11",
