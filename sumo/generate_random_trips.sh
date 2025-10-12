@@ -1,13 +1,8 @@
-OUTPUT_PATH="./sumo/simulations/ohare-chicago"
-NETWORK_FILE="./sumo/simulations/ohare-chicago/ohare-filtered.net.xml"
+OUTPUT_PATH="./sumo/simulations/ohare-chicago-junctionless"
+NETWORK_FILE="./sumo/simulations/ohare-chicago-junctionless/network.net.xml"
 
-# GET THE FILENAME
-BASENAME=$(basename "$NETWORK_FILE" .net.xml)
-
-OUTPUT_FILE_TRIPS="${OUTPUT_PATH}/${BASENAME}.trips.xml"
-
-OUTPUT_FILE_TRIPS="${OUTPUT_PATH}/${BASENAME}.trips.xml"
-OUTPUT_FILE_ROUTES="${OUTPUT_PATH}/${BASENAME}_random.rou.xml"
+OUTPUT_FILE_TRIPS="${OUTPUT_PATH}/random_trips.trips.xml"
+OUTPUT_FILE_ROUTES="${OUTPUT_PATH}/random_routes.rou.xml"
 
 export SUMO_HOME="/usr/share/sumo"
 

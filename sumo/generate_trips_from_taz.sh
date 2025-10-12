@@ -2,7 +2,7 @@
 
 set -e
 
-TAZ_FILE="./sumo/simulations/ohare-chicago/ohare-filtered.taz.add.xml"
+TAZ_FILE="./sumo/simulations/ohare-chicago/trip_taz.add.xml"
 OUTPUT_PATH="./sumo/simulations/ohare-chicago"
 
 chmod -R a+rw "$TAZ_FILE"

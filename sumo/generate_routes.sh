@@ -1,7 +1,7 @@
 OUTPUT_PATH="./sumo/simulations/ohare-chicago"
-NETWORK_FILE="./sumo/simulations/ohare-chicago/ohare-filtered.net.xml"
-TAZ_FILE="./sumo/simulations/ohare-chicago/ohare-filtered.taz.add.xml"
-TRIPS_FILE="./sumo/simulations/ohare-chicago/ohare-filtered.trips.xml"
+NETWORK_FILE="./sumo/simulations/ohare-chicago/network.net.xml"
+TAZ_FILE="./sumo/simulations/ohare-chicago/grid_taz.add.xml"
+TRIPS_FILE="./sumo/simulations/ohare-chicago/random_trips.trips.xml"
 
 # GET THE FILENAME
 BASENAME=$(basename "$NETWORK_FILE" .net.xml)

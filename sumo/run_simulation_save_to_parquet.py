@@ -6,9 +6,9 @@ import numpy as np
 import polars as pl
 from pyproj import Geod
 
-BASE_PATH = Path(__file__).parent.absolute()
-SIMULATION_PATH = BASE_PATH / "simulations/ohare-chicago/simulation.sumocfg"
-OUTPUT_PATH = BASE_PATH / "simulations/ohare-chicago/output"
+BASE_PATH = Path(__file__).parent.absolute() / "sumo/simulations/ohare-chicago"
+SIMULATION_PATH = BASE_PATH / "simulation.sumocfg"
+OUTPUT_PATH = BASE_PATH / "output"
 NOISE_METERS_STD: float | None = 5
 RANDOM_SEED = 42
 

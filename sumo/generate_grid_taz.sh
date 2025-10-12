@@ -2,13 +2,12 @@
 
 set -e
 
-NETWORK_FILE="./sumo/simulations/ohare-chicago/ohare-filtered.net.xml"
-OUTPUT_PATH="./sumo/simulations/ohare-chicago"
+NETWORK_FILE="./sumo/simulations/ohare-chicago-junctionless/network.net.xml"
+OUTPUT_PATH="./sumo/simulations/ohare-chicago-junctionless"
 
 chmod -R a+rw "$NETWORK_FILE"
 
-BASENAME=$(basename "$NETWORK_FILE" .net.xml)
-OUTPUT_FILE="${OUTPUT_PATH}/${BASENAME}.taz.add.xml"
+OUTPUT_FILE="${OUTPUT_PATH}/grid_taz.add.xml"
 
 export SUMO_HOME="/usr/share/sumo"
 

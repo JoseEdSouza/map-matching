@@ -1,7 +1,7 @@
 #!/bin/bash
 
-NETWORK_FILE="$(pwd)/sumo/simulations/ohare-chicago/ohare-filtered.net.xml"
-TAZ_FILE="$(pwd)/sumo/simulations/ohare-chicago/ohare-filtered.taz.add.xml"
+NETWORK_FILE="$(pwd)/sumo/simulations/ohare-chicago-junctionless/network.net.xml"
+TAZ_FILE="$(pwd)/sumo/simulations/ohare-chicago-junctionless/grid_taz.add.xml"
 
 chmod -R a+rw "$NETWORK_FILE"
 chmod -R a+rw "$TAZ_FILE"
