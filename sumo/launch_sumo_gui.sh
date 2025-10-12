@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SIMULATION_PATH="$(pwd)/sumo/simulations/ohare-chicago/simulation.sumocfg"
+SIMULATION_PATH="$(pwd)/sumo/simulations/ohare-chicago-junctionless/simulation.sumocfg"
 
 export SUMO_HOME="/usr/share/sumo"
 
