@@ -9,6 +9,8 @@ wheels/
 # ide and text editor settings
 .vscode/
 .idea/
+.ruff_cache/
+__pycache__/
 
 # cache
 .cache/
