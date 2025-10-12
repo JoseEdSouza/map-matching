@@ -40,11 +40,10 @@ def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
     print(f"Loading network from {network_path}...")
     net: Net = sumolib.net.readNet(network_path, withInternal=True)
 
-    # The final dictionary now maps internal LANE IDs to OSM edge IDs
     internal_lane_to_osm_edge: dict[str, str] = {}
 
     try:
-        # Step 1: Pre-compute the lookup maps for each cluster. This part is efficient and correct.
+        
         cluster_osm_maps: dict[str, dict[str, str]] = {}
         for node in net.getNodes():
             junction_id = node.getID()
@@ -60,7 +59,7 @@ def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
                 orig_edge_ids_list = orig_edge_ids_str.split()
                 cluster_osm_maps[junction_id] = dict(zip(orig_ids_list, orig_edge_ids_list))
 
-        # Step 2: Iterate through all LANES to build the map, as this is the ID you receive.
+
         edges: list[Edge] = net.getEdges()
         lanes :list[Lane] = []
         for edge in edges:
@@ -71,7 +70,6 @@ def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
             if not internal_lane_id.startswith(":"):
                 continue
 
-            # Your traceback logic is correct.
             incoming_conns = lane.getIncomingConnections()
             if not incoming_conns:
                 continue
@@ -83,8 +81,6 @@ def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
             if not orig_to_node:
                 continue
 
-            # **IMPROVEMENT**: Get the cluster ID reliably from the lane's parent edge.
-            # This is safer than splitting the string.
             base_cluster_id = lane.getEdge().getToNode().getID()
             osm_map = cluster_osm_maps.get(base_cluster_id)
 
