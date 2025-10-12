@@ -1,9 +1,8 @@
-from functools import partial
+from contextlib import contextmanager
 from pathlib import Path
 from typing import cast
 
-from xml.etree import ElementTree as ET
-
+import sumolib
 import traci
 import numpy as np
 import polars as pl
@@ -19,98 +18,136 @@ NOISE_METERS_STD: float | None = 5
 RANDOM_SEED = 42
 
 
-def map_junctions_to_osm_ids(network_path: Path) -> dict[str, list[str]]:
-    tree = ET.parse(network_path)
-    root = tree.getroot()
+type Node = sumolib.net.node.Node
+type Edge = sumolib.net.edge.Edge
+type Net = sumolib.net.Net
+type Lane = sumolib.net.lane.Lane
+type Conn = sumolib.net.connection.Connection
 
-    jid_to_osmid: dict[str, list[str]] = {}
-    for junction in root.iterfind("junction"):
-        jid = junction.get("id")
-        if not jid:
-            continue
 
-        for param in junction.iterfind("param"):
-            if param.get("key") != "origEdgeIds":
+
+def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
+    """
+    Scans a SUMO network file and creates a mapping from each internal LANE ID
+    (e.g., ':cluster_..._4_0') to its original OpenStreetMap edge/way ID.
+
+    Args:
+        network_path: The path to the .net.xml file.
+
+    Returns:
+        A dictionary mapping internal lane IDs to original OSM edge IDs.
+    """
+    print(f"Loading network from {network_path}...")
+    net: Net = sumolib.net.readNet(network_path, withInternal=True)
+
+    # The final dictionary now maps internal LANE IDs to OSM edge IDs
+    internal_lane_to_osm_edge: dict[str, str] = {}
+
+    try:
+        # Step 1: Pre-compute the lookup maps for each cluster. This part is efficient and correct.
+        cluster_osm_maps: dict[str, dict[str, str]] = {}
+        for node in net.getNodes():
+            junction_id = node.getID()
+            if not junction_id.startswith("cluster"):
                 continue
 
-            edge_ids = param.get("value")
-            if not edge_ids:
+            params = node.getParams()
+            orig_ids_str = params.get("origId")
+            orig_edge_ids_str = params.get("origEdgeIds")
+
+            if orig_ids_str and orig_edge_ids_str:
+                orig_ids_list = orig_ids_str.split()
+                orig_edge_ids_list = orig_edge_ids_str.split()
+                cluster_osm_maps[junction_id] = dict(zip(orig_ids_list, orig_edge_ids_list))
+
+        # Step 2: Iterate through all LANES to build the map, as this is the ID you receive.
+        edges: list[Edge] = net.getEdges()
+        lanes :list[Lane] = []
+        for edge in edges:
+            lanes.extend(edge.getLanes())
+
+        for lane in lanes:
+            internal_lane_id = lane.getID()
+            if not internal_lane_id.startswith(":"):
                 continue
 
-            edge_ids = edge_ids.split()
-            jid_to_osmid.setdefault(jid, []).extend(edge_ids)
+            # Your traceback logic is correct.
+            incoming_conns = lane.getIncomingConnections()
+            if not incoming_conns:
+                continue
 
-    return jid_to_osmid
+            connection = incoming_conns[0]
+            from_edge = connection.getFromLane().getEdge()
+            
+            orig_to_node = from_edge.getParams().get("origTo")
+            if not orig_to_node:
+                continue
+
+            # **IMPROVEMENT**: Get the cluster ID reliably from the lane's parent edge.
+            # This is safer than splitting the string.
+            base_cluster_id = lane.getEdge().getToNode().getID()
+            osm_map = cluster_osm_maps.get(base_cluster_id)
+
+            if osm_map and (orig_eid := osm_map.get(orig_to_node)):
+                internal_lane_to_osm_edge[internal_lane_id] = orig_eid
+
+    except Exception as e:
+        print(f"An error occurred while processing the network file: {e}")
+        raise
+
+    return internal_lane_to_osm_edge
 
 
-def sumo_eid_to_osmid(jid_to_osmid: dict[str, list[str]], sumo_eid: str) -> str:
-    # :cluster_1234_0987_5678_3 -> cluster_1234_0987_5678 3
-    if "cluster" not in sumo_eid:
-        return sumo_eid
-    sumo_eid = sumo_eid.strip().strip(":")
-    parts = sumo_eid.rsplit("_", 1)
-    if len(parts) != 2:
-        return sumo_eid  # Retorna o ID original se o formato for inesperado
-    base_id, lane_index = parts
-    lane_index = int(lane_index) - 1  # Converter para índice baseado em 0
-    osmid_list = jid_to_osmid.get(base_id)
-    if not osmid_list:
-        return sumo_eid
-    if lane_index < 0 or lane_index >= len(osmid_list):
-        return sumo_eid
-    return osmid_list[lane_index]
+@contextmanager
+def run_traci(cmd: list[str]):
+    traci.start(cmd)
+    try:
+        yield
+    finally:
+        traci.close()
 
 
 def main():
     cmd = ["sumo", "-c", str(SIMULATION_PATH)]
 
-    jid_to_osmid = map_junctions_to_osm_ids(NETWORK_PATH)
-    eid_to_osmid = partial(sumo_eid_to_osmid, jid_to_osmid)
+    jid_to_osmid = map_internal_lanes_to_osm_edges(NETWORK_PATH)
 
     vehicle_ids = pl.Series(dtype=pl.Categorical)
     geo_positions = pl.Series(dtype=pl.Array(pl.Float64, shape=2))
     times = pl.Series(dtype=pl.Float64)
     edges = pl.Series(dtype=pl.Categorical)
 
-    count = 0
-    traci.start(cmd)
-    while cast(int, traci.simulation.getMinExpectedNumber()) > 0 and count < 1000:
-        count += 1
 
-        traci.simulation.step()
+    with run_traci(cmd):
+        while cast(int, traci.simulation.getMinExpectedNumber()) > 0:
+            traci.simulation.step()
 
-        current_vehicles = pl.Series(traci.vehicle.getIDList(), dtype=pl.Categorical)
-        if len(current_vehicles) == 0:
-            continue
+            current_vehicles = pl.Series(traci.vehicle.getIDList(), dtype=pl.Categorical)
+            if len(current_vehicles) == 0:
+                continue
 
-        current_pos = current_vehicles.map_elements(
-            traci.vehicle.getPosition,
-            return_dtype=pl.Array(pl.Float64, shape=2),
-        )
+            current_pos = current_vehicles.map_elements(
+                traci.vehicle.getPosition,
+                return_dtype=pl.Array(pl.Float64, shape=2),
+            )
 
-        current_geo = current_pos.map_elements(
-            lambda pos: traci.simulation.convertGeo(pos[0], pos[1]),
-            return_dtype=pl.List(pl.Float64),
-        ).cast(pl.Array(pl.Float64, shape=2))
+            current_geo = current_pos.map_elements(
+                lambda pos: traci.simulation.convertGeo(pos[0], pos[1]),
+                return_dtype=pl.List(pl.Float64),
+            ).cast(pl.Array(pl.Float64, shape=2))
 
-        current_edges = current_vehicles.map_elements(
-            traci.vehicle.getRoadID, return_dtype=pl.String
-        )
+            current_edges = current_vehicles.map_elements(
+                traci.vehicle.getLaneID, return_dtype=pl.String
+            ).cast(pl.Categorical)
 
-        current_edges = current_edges.map_elements(
-            eid_to_osmid, return_dtype=pl.String
-        ).cast(pl.Categorical)
+            current_time = pl.Series(
+                np.full(len(current_vehicles), traci.simulation.getTime()), dtype=pl.Float64
+            )
 
-        current_time = pl.Series(
-            np.full(len(current_vehicles), traci.simulation.getTime()), dtype=pl.Float64
-        )
-
-        vehicle_ids.append(current_vehicles)
-        geo_positions.append(current_geo)
-        times.append(current_time)
-        edges.append(current_edges)
-
-    traci.close()
+            vehicle_ids.append(current_vehicles)
+            geo_positions.append(current_geo)
+            times.append(current_time)
+            edges.append(current_edges)
 
     lf = pl.LazyFrame(
         (
@@ -123,6 +160,13 @@ def main():
 
     lf = lf.with_columns(
         pl.col("raw_edge_id")
+        .replace(jid_to_osmid, return_dtype=pl.String)
+        .alias("refined_edge_id")
+        .cast(pl.Categorical)
+    )
+
+    lf = lf.with_columns(
+        pl.col("refined_edge_id")
         .cast(pl.String)
         .str.extract(r"^\D*(\d+).*$", 1)
         .alias("edge_id")
