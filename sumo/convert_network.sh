@@ -15,7 +15,7 @@ export SUMO_HOME="/usr/share/sumo"
 # use sumo netconvert tool to convert the osm file to a sumo network file
 netconvert --osm-files $SOURCE_FILE -o $TARGET_FILE \
     --ramps.guess \
-    --junctions.join false \
+    --junctions.join \
     --tls.guess-signals \
     --tls.discard-simple \
     --tls.join \
