@@ -25,7 +25,6 @@ type Lane = sumolib.net.lane.Lane
 type Conn = sumolib.net.connection.Connection
 
 
-
 def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
     """
     Scans a SUMO network file and creates a mapping from each internal LANE ID
@@ -43,7 +42,6 @@ def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
     internal_lane_to_osm_edge: dict[str, str] = {}
 
     try:
-        
         cluster_osm_maps: dict[str, dict[str, str]] = {}
         for node in net.getNodes():
             junction_id = node.getID()
@@ -57,11 +55,12 @@ def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
             if orig_ids_str and orig_edge_ids_str:
                 orig_ids_list = orig_ids_str.split()
                 orig_edge_ids_list = orig_edge_ids_str.split()
-                cluster_osm_maps[junction_id] = dict(zip(orig_ids_list, orig_edge_ids_list))
-
+                cluster_osm_maps[junction_id] = dict(
+                    zip(orig_ids_list, orig_edge_ids_list)
+                )
 
         edges: list[Edge] = net.getEdges()
-        lanes :list[Lane] = []
+        lanes: list[Lane] = []
         for edge in edges:
             lanes.extend(edge.getLanes())
 
@@ -76,7 +75,7 @@ def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
 
             connection = incoming_conns[0]
             from_edge = connection.getFromLane().getEdge()
-            
+
             orig_to_node = from_edge.getParams().get("origTo")
             if not orig_to_node:
                 continue
@@ -113,12 +112,13 @@ def main():
     times = pl.Series(dtype=pl.Float64)
     edges = pl.Series(dtype=pl.Categorical)
 
-
     with run_traci(cmd):
         while cast(int, traci.simulation.getMinExpectedNumber()) > 0:
             traci.simulation.step()
 
-            current_vehicles = pl.Series(traci.vehicle.getIDList(), dtype=pl.Categorical)
+            current_vehicles = pl.Series(
+                traci.vehicle.getIDList(), dtype=pl.Categorical
+            )
             if len(current_vehicles) == 0:
                 continue
 
@@ -137,7 +137,8 @@ def main():
             ).cast(pl.Categorical)
 
             current_time = pl.Series(
-                np.full(len(current_vehicles), traci.simulation.getTime()), dtype=pl.Float64
+                np.full(len(current_vehicles), traci.simulation.getTime()),
+                dtype=pl.Float64,
             )
 
             vehicle_ids.append(current_vehicles)

@@ -20,7 +20,6 @@ type Lane = sumolib.net.lane.Lane
 type Conn = sumolib.net.connection.Connection
 
 
-
 def map_internal_edges_to_osm_edges(network_path: Path) -> dict[str, str]:
     """
     Scans a SUMO network file and creates a mapping from each internal edge ID
@@ -73,17 +72,18 @@ def map_internal_edges_to_osm_edges(network_path: Path) -> dict[str, str]:
                 continue
 
             # Trace back to the original incoming edge
-            connection = incoming_conns[0] # there is only one incoming connection and only one
+            connection = incoming_conns[
+                0
+            ]  # there is only one incoming connection and only one
             from_lane: Lane = connection.getFromLane()
             from_edge: Edge = from_lane.getEdge()
 
-    
             orig_to_node = from_edge.getParams().get("origTo")
             if not orig_to_node:
                 continue
             # Start by assuming the original edge ID is the node ID (fallback)
             internal_to_osm_edge[internal_edge_id] = orig_to_node
-            
+
             base_cluster_id = internal_edge_id.removeprefix(":").rsplit("_", 1)[0]
             osm_map = cluster_osm_maps.get(base_cluster_id)
 
@@ -95,6 +95,7 @@ def map_internal_edges_to_osm_edges(network_path: Path) -> dict[str, str]:
         raise
 
     return internal_to_osm_edge
+
 
 if __name__ == "__main__":
     jid_to_osmid = map_internal_edges_to_osm_edges(net_file)

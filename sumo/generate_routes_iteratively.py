@@ -27,11 +27,13 @@ OUTPUT_PATH = BASE_PATH
 OUTPUT_FILE_ROUTES = OUTPUT_PATH / "optimized_routes.rou.xml"
 OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
+
 def try_parse_int(value: str, default: int | None = None) -> int | None:
     try:
         return int(value)
     except ValueError:
         return default
+
 
 def main():
     with tempfile.TemporaryDirectory(delete=False) as temp_dir:
@@ -64,8 +66,6 @@ def main():
         except subprocess.CalledProcessError as e:
             print(f"An error occurred during the SUMO simulation: {e}")
             return
-            
-        
 
         # Find the last generated .rou.xml.gz file
         out_files = os.listdir(temp_path)
@@ -77,18 +77,24 @@ def main():
 
         last_simulation = max(simulation_files)
         if exit_early:
-            print(f"Using the last successfully generated simulation: {last_simulation-1:03d}")
+            print(
+                f"Using the last successfully generated simulation: {last_simulation - 1:03d}"
+            )
             if last_simulation == 0:
                 raise ValueError("No valid simulation was completed.")
             last_simulation -= 1
-        
+
         last_simulation = f"{last_simulation:03d}"
 
         filename = TRIPS_FILE.name.replace(".trips.xml", "")
         print(filename)
-        final_rou_path = temp_path / last_simulation / f"{filename}_{last_simulation}.rou.gz"
+        final_rou_path = (
+            temp_path / last_simulation / f"{filename}_{last_simulation}.rou.gz"
+        )
         if not final_rou_path.exists():
-            raise FileNotFoundError(f"The expected file {final_rou_path} was not found.")
+            raise FileNotFoundError(
+                f"The expected file {final_rou_path} was not found."
+            )
 
         with gzip.open(final_rou_path, "rb") as f_in:
             with open(OUTPUT_FILE_ROUTES, "wb") as f_out:

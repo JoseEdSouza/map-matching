@@ -27,7 +27,9 @@ class Matcher(BaseMatcher):
         edge_ids = [str(edge) for (_, __, edge) in response["edge_ids"]]
         return MatchResult(
             _matcher_name="GraphHopper",
-            _original_points=[Coordinate(latitude=lat, longitude=lon) for lat, lon, _ in points],
+            _original_points=[
+                Coordinate(latitude=lat, longitude=lon) for lat, lon, _ in points
+            ],
             points=[Coordinate(latitude=lat, longitude=lon) for lat, lon in res_points],
             edge_ids=edge_ids,
         )

@@ -154,9 +154,9 @@ def __map_osmid_to_edges(graph: nx.Graph) -> dict[str, list[tuple[int, int]]]:
         for osm in osmids:
             osmid_str = str(osm)
             osmid_to_edge_map.setdefault(osmid_str, []).append((u, v))
-        
+
         osmid_to_edge_map.setdefault(str(u), []).append((u, v))
-        
+
     for node in graph.nodes():
         osmid_to_edge_map.setdefault(str(node), []).append((node, node))
 
@@ -164,6 +164,7 @@ def __map_osmid_to_edges(graph: nx.Graph) -> dict[str, list[tuple[int, int]]]:
 
 
 type edge_id = str
+
 
 def plot_map_matching_from_osmid(
     graph: nx.Graph,
@@ -214,7 +215,7 @@ def plot_map_matching_from_osmid(
                         hover_texts.append(None)
 
                 # add to path
-                for (x, y) in segment:
+                for x, y in segment:
                     x_coords.append(x)
                     y_coords.append(y)
                     hover_texts.append(f"osmid: {osmid}")
@@ -247,7 +248,7 @@ def plot_map_matching_from_osmid(
         y_bg.extend([pos[u][1], pos[v][1], None])
         osmid = data.get("osmid", "")
         hover_bg.extend([f"osmid: {osmid}", f"osmid: {osmid}", None])
-    
+
     traces.append(
         go.Scatter(
             x=x_bg,
@@ -272,7 +273,7 @@ def plot_map_matching_from_osmid(
         traces.append(
             create_ordered_path_trace(map_matched_osmid_path, "blue", "Map Matched")
         )
-    
+
     node_markers = go.Scatter(
         x=[x for x, y in pos.values()],
         y=[y for x, y in pos.values()],
@@ -283,8 +284,6 @@ def plot_map_matching_from_osmid(
         text=[f"NodeID: {node}" for node in graph.nodes()],
         visible=False,
     )
-
-
 
     # --- Layout e botões ---
     show_nodes = dict(
@@ -380,11 +379,7 @@ def plot_map_matching_from_osmid(
         ],
     )
 
-
-
-    fig.update_layout(
-        height=700
-    )
+    fig.update_layout(height=700)
 
     fig.update_layout(
         dragmode="pan",

@@ -32,7 +32,8 @@ class MatchResult:
 
     def plot(self) -> None:
         """Plot the matched points and edges using folium."""
-        from .mmplot import  plot_trajectories
+        from .mmplot import plot_trajectories
+
         plot_trajectories(
             original=[pt.to_tuple() for pt in self._original_points],
             calculated=[pt.to_tuple() for pt in self.points],
