@@ -94,10 +94,10 @@ def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
 
 
 @contextmanager
-def run_traci(cmd: list[str]):
+def traci_session(cmd: list[str]):
     traci.start(cmd)
     try:
-        yield
+        yield traci
     finally:
         traci.close()
 
@@ -110,14 +110,14 @@ def main():
     vehicle_ids = pl.Series(dtype=pl.Categorical)
     geo_positions = pl.Series(dtype=pl.Array(pl.Float64, shape=2))
     times = pl.Series(dtype=pl.Float64)
-    edges = pl.Series(dtype=pl.Categorical)
+    lanes = pl.Series(dtype=pl.String)
 
-    with run_traci(cmd):
-        while cast(int, traci.simulation.getMinExpectedNumber()) > 0:
-            traci.simulation.step()
+    with traci_session(cmd) as session:
+        while cast(int, session.simulation.getMinExpectedNumber()) > 0:
+            session.simulation.step()
 
             current_vehicles = pl.Series(
-                traci.vehicle.getIDList(), dtype=pl.Categorical
+                session.vehicle.getIDList(), dtype=pl.Categorical
             )
             if len(current_vehicles) == 0:
                 continue
@@ -132,41 +132,48 @@ def main():
                 return_dtype=pl.List(pl.Float64),
             ).cast(pl.Array(pl.Float64, shape=2))
 
-            current_edges = current_vehicles.map_elements(
-                traci.vehicle.getLaneID, return_dtype=pl.String
-            ).cast(pl.Categorical)
+            current_lanes = current_vehicles.map_elements(
+                session.vehicle.getLaneID, return_dtype=pl.String
+            )
 
             current_time = pl.Series(
-                np.full(len(current_vehicles), traci.simulation.getTime()),
+                np.full(len(current_vehicles), session.simulation.getTime()),
                 dtype=pl.Float64,
             )
 
             vehicle_ids.append(current_vehicles)
             geo_positions.append(current_geo)
             times.append(current_time)
-            edges.append(current_edges)
+            lanes.append(current_lanes)
 
     lf = pl.LazyFrame(
         (
             vehicle_ids.alias("vehicle_id"),
             geo_positions.alias("geo_position"),
             times.alias("time"),
-            edges.alias("raw_edge_id"),
+            lanes.alias("raw_lane_id").cast(pl.Categorical),
         )
     )
 
     lf = lf.with_columns(
-        pl.col("raw_edge_id")
-        .replace(jid_to_osmid, return_dtype=pl.String)
-        .alias("refined_edge_id")
+        pl.col("raw_lane_id")
+        .replace_strict(
+            jid_to_osmid, default=pl.col("raw_lane_id"), return_dtype=pl.String
+        )
         .cast(pl.Categorical)
+        .alias("mapped_lane_id")
     )
 
     lf = lf.with_columns(
-        pl.col("refined_edge_id")
+        pl.col("mapped_lane_id")
         .cast(pl.String)
-        .str.extract(r"^\D*(\d+).*$", 1)
+        .str.extract(r"(-?\d+)(?:.*)", 1)
         .alias("edge_id")
+    )
+
+    lf = lf.with_columns(
+        pl.col("edge_id").str.starts_with("-").alias("reversed"),
+        pl.col("edge_id").str.replace("-", "").cast(pl.Categorical),
     )
 
     lf = lf.with_columns(
