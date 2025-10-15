@@ -3,7 +3,12 @@
 # pip install sumolib
 #
 from pathlib import Path
+
 import sumolib
+
+import networkx as nx
+import osmnx as ox
+
 
 # Path to your network file
 ROOT_PATH = Path(".").resolve().absolute()
@@ -20,7 +25,9 @@ type Lane = sumolib.net.lane.Lane
 type Conn = sumolib.net.connection.Connection
 
 
-def map_internal_edges_to_osm_edges(network_path: Path) -> dict[str, str]:
+def map_internal_edges_to_osm_edges(
+    sumo_network_path: Path, road_network_graph: nx.MultiDiGraph
+) -> dict[str, str]:
     """
     Scans a SUMO network file and creates a mapping from each internal edge ID
     (e.g., ':cluster_..._4') to its original OpenStreetMap edge/way ID.
@@ -31,64 +38,54 @@ def map_internal_edges_to_osm_edges(network_path: Path) -> dict[str, str]:
     Returns:
         A dictionary mapping internal edge IDs to original OSM edge IDs.
     """
-    print(f"Loading network from {network_path}...")
-    net: Net = sumolib.net.readNet(network_path, withInternal=True)
-
     internal_to_osm_edge: dict[str, str] = {}
 
+    print(f"Loading network from {sumo_network_path}...")
+    net: Net = sumolib.net.readNet(sumo_network_path, withInternal=True)
+
+    _, osm_edges = ox.graph_to_gdfs(road_network_graph)
+
     try:
-        cluster_osm_maps: dict[str, dict[str, str]] = {}
-        nodes: list[Node] = net.getNodes()
-        for node in nodes:
-            junction_id = node.getID()
-            if not junction_id.startswith("cluster"):
-                continue
-
-            params = node.getParams()
-            orig_ids_str = params.get("origId")
-            orig_edge_ids_str = params.get("origEdgeIds")
-
-            if orig_ids_str and orig_edge_ids_str:
-                orig_ids_list = orig_ids_str.split()
-                orig_edge_ids_list = orig_edge_ids_str.split()
-                # Create the specific mapping for this cluster
-                cluster_osm_maps[junction_id] = dict(
-                    zip(orig_ids_list, orig_edge_ids_list)
-                )
-
         edges: list[Edge] = net.getEdges()
         for edge in edges:
-            internal_edge_id = edge.getID()
-            if not internal_edge_id.startswith(":cluster"):
+            if not edge.getID().startswith(":cluster"):
                 continue
 
-            # Assumption: All lanes of an internal edge come from the same "real" edge.
-            # So, we only need to check the first lane to find the origin.
-            first_lane = edge.getLanes()[0]
-
-            incoming_conns: list[Conn] = first_lane.getIncomingConnections()
-            if not incoming_conns:
-                # This can happen for entry/exit points, safe to skip
+            lanes: list[Lane] = edge.getLanes()
+            if not lanes:
                 continue
 
-            # Trace back to the original incoming edge
-            connection = incoming_conns[
-                0
-            ]  # there is only one incoming connection and only one
-            from_lane: Lane = connection.getFromLane()
-            from_edge: Edge = from_lane.getEdge()
+            for lane in lanes:
+                out_conns: list[Conn] = lane.getOutgoing()
+                in_conns: list[Conn] = lane.getIncomingConnections()
 
-            orig_to_node = from_edge.getParams().get("origTo")
-            if not orig_to_node:
-                continue
-            # Start by assuming the original edge ID is the node ID (fallback)
-            internal_to_osm_edge[internal_edge_id] = orig_to_node
+                for in_conn in in_conns:  # Geralmente só haverá uma
+                    from_edge = in_conn.getFrom()
+                    for out_conn in out_conns:
+                        to_edge = out_conn.getTo()
+                        print(
+                            f"{from_edge.getID()} -> {lane.getID()} -> {to_edge.getID()}"
+                        )
 
-            base_cluster_id = internal_edge_id.removeprefix(":").rsplit("_", 1)[0]
-            osm_map = cluster_osm_maps.get(base_cluster_id)
+                #     from_edge: Edge = conn.getFrom()
+                #     # to_edge: Edge = conn.getTo()
+                #     to_lane: Lane = conn.getToLane()
+                #     conn: Conn = to_lane.getIncomingConnections()[0]
+                #     conn.getTLLinkIndex
 
-            if osm_map and (orig_eid := osm_map.get(orig_to_node)):
-                internal_to_osm_edge[internal_edge_id] = orig_eid
+                #     from_params = from_edge.getParams()
+                #     to_params = to_edge.getParams()
+
+                #     print(f"From edge: {from_edge.getID()} with params {from_params}")
+                #     print(f"To edge: {to_edge.getID()} with params {to_params}")
+
+                #     to_osmid = from_params.get("origTo")
+                #     from_osmid = to_params.get("origFrom")
+
+                # if to_osmid and from_osmid:
+                #     key = (to_osmid, from_osmid, 0)
+                #     print(f"Looking for edge key: {key}")
+                #     osm_edges.loc[key, "osmid"]
 
     except Exception as e:
         print(f"An error occurred while processing the network file: {e}")
@@ -98,6 +95,7 @@ def map_internal_edges_to_osm_edges(network_path: Path) -> dict[str, str]:
 
 
 if __name__ == "__main__":
-    jid_to_osmid = map_internal_edges_to_osm_edges(net_file)
-    for jid, osmid in jid_to_osmid.items():
-        print(f"{jid} -> {osmid}")
+    G = ox.load_graphml(ROOT_PATH / "networks/graphml/ohare_network.graphml")
+    map_internal_edges_to_osm_edges(net_file, G)
+    # for jid, osmid in jid_to_osmid.items():
+    #     print(f"{jid} -> {osmid}")
