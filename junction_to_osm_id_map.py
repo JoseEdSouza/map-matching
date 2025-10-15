@@ -31,13 +31,13 @@ def resolve_lane_dest_node(net: Net, start_lane_id: str) -> tuple[str, str] | No
         outgoing_connections: list[Conn] = current_lane.getOutgoing()
 
         if not outgoing_connections:
-            return None  # No outgoing connections
+            return None
 
-        # Assuming we want the first outgoing connection
         if len(outgoing_connections) > 1:
             print(
                 f"Warning: Lane {start_lane_id} has multiple outgoing connections. Using the first one."
             )
+
         next_connection = outgoing_connections[0]
         destination_lane = next_connection.getToLane()
         destination_lane_id = destination_lane.getID()
@@ -45,13 +45,12 @@ def resolve_lane_dest_node(net: Net, start_lane_id: str) -> tuple[str, str] | No
         if not destination_lane_id.startswith(":"):
             destination_edge = destination_lane.getEdge()
             # the "from" node of the destination edge is the "to" node of the current edge
-            to_node_id = destination_edge.getParams().get("origFrom", "Unknown") 
+            to_node_id = destination_edge.getParams().get("origFrom", "Unknown")
             return destination_edge.getID(), to_node_id
 
         return resolve_lane_dest_node(net, destination_lane_id)
 
     except KeyError:
-        # Handle case where the lane ID is invalid
         return None
 
 
@@ -72,13 +71,13 @@ def resolve_lane_origin_node(net: Net, start_lane_id: str) -> tuple[str, str] | 
         incoming_connections: list[Conn] = current_lane.getIncomingConnections()
 
         if not incoming_connections:
-            return None  # No incoming connections
+            return None
 
-        # Assuming we want the first incoming connection
         if len(incoming_connections) > 1:
             print(
                 f"Warning: Lane {start_lane_id} has multiple incoming connections. Using the first one."
             )
+
         previous_connection = incoming_connections[0]
         incoming_lane = previous_connection.getFromLane()
         incoming_lane_id = incoming_lane.getID()
@@ -92,7 +91,6 @@ def resolve_lane_origin_node(net: Net, start_lane_id: str) -> tuple[str, str] | 
         return resolve_lane_origin_node(net, incoming_lane_id)
 
     except KeyError:
-        # Handle case where the lane ID is invalid
         return None
 
 
@@ -169,9 +167,11 @@ def lane_id_to_osm_edge_id(
         return str(edges_gdf.loc[key, "osmid"])
     except KeyError:
         return None
-    
 
-def create_junction_to_edge_osmid_map(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str]:
+
+def create_junction_to_edge_osmid_map(
+    net: Net, edges_gdf: gpd.GeoDataFrame
+) -> dict[str, str]:
     """
     Creates a mapping from internal lane IDs to their corresponding OSM edge IDs.
 
@@ -195,13 +195,14 @@ def create_junction_to_edge_osmid_map(net: Net, edges_gdf: gpd.GeoDataFrame) -> 
     return jid_to_edge_osmid
 
 
-
 if __name__ == "__main__":
-    net_file = Path("./sumo/simulations/ohare-chicago/network.net.xml")
+    net_file = Path("./sumo/simulations/ohare-chicago-junctionless/network.net.xml")
     road_graph_file = Path("./networks/graphml/ohare_network.graphml")
 
     G = ox.load_graphml(road_graph_file)
-    edges_gdf = ox.graph_to_gdfs(G, nodes=False, fill_edge_geometry=False).to_crs(epsg=4326)
+    edges_gdf = ox.graph_to_gdfs(G, nodes=False, fill_edge_geometry=False).to_crs(
+        epsg=4326
+    )
 
     network = sumolib.net.readNet(net_file, withInternal=True)
 
