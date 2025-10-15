@@ -1,3 +1,4 @@
+from functools import lru_cache
 from pathlib import Path
 
 import sumolib
@@ -9,6 +10,7 @@ type Conn = sumolib.net.connection.Connection
 type Edge = sumolib.net.edge.Edge
 
 
+@lru_cache(maxsize=None)
 def resolve_outgoing_from_lane(
     net: Net, start_lane_id: str
 ) -> tuple[str, str] | None:
@@ -51,7 +53,7 @@ def resolve_outgoing_from_lane(
         # Handle case where the lane ID is invalid
         return None
 
-
+@lru_cache(maxsize=None)
 def resolve_incoming_from_lane(
     net: Net, start_lane_id: str
 ) -> tuple[str, str] | None:
@@ -142,7 +144,11 @@ def create_junction_to_osm_id_map(net: Net) -> dict[str, tuple[str, str]]:
     return junction_to_osm_id
 
 
+
+
+
 if __name__ == "__main__":
+
     net_file = Path("./sumo/simulations/ohare-chicago/network.net.xml")
     network = sumolib.net.readNet(net_file, withInternal=True)
     junction_to_osmid_map = create_junction_to_osm_id_map(network)
