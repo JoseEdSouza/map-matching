@@ -16,6 +16,11 @@ export SUMO_HOME="/usr/share/sumo"
 netconvert --osm-files $SOURCE_FILE -o $TARGET_FILE \
     --ramps.guess \
     --junctions.join \
+    --junctions.join-dist 5 \
+    --no-turnarounds \
+    --no-turnarounds.except-deadend \
+    --no-turnarounds.except-turnlane \
+    --no-turnarounds.fringe \
     --tls.guess-signals \
     --tls.discard-simple \
     --tls.join \
