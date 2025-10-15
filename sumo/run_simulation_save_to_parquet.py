@@ -102,12 +102,26 @@ def traci_session(cmd: list[str]):
         traci.close()
 
 
+def write_parquet_with_options(
+    df: pl.DataFrame,
+    output_path: Path,
+) -> None:
+    df.write_parquet(
+        output_path,
+        mkdir=True,
+        compression="zstd",
+        compression_level=3,
+        row_group_size=100_000,
+        statistics=True,
+    )
+
+
 def main():
     cmd = ["sumo", "-c", str(SIMULATION_PATH)]
 
     jid_to_osmid = map_internal_lanes_to_osm_edges(NETWORK_PATH)
 
-    vehicle_ids = pl.Series(dtype=pl.Categorical)
+    vehicle_ids = pl.Series(dtype=pl.Int32)
     geo_positions = pl.Series(dtype=pl.Array(pl.Float64, shape=2))
     times = pl.Series(dtype=pl.Float64)
     lanes = pl.Series(dtype=pl.String)
@@ -117,8 +131,9 @@ def main():
             session.simulation.step()
 
             current_vehicles = pl.Series(
-                session.vehicle.getIDList(), dtype=pl.Categorical
-            )
+                session.vehicle.getIDList(), dtype=pl.String
+            ).cast(pl.Categorical)
+
             if len(current_vehicles) == 0:
                 continue
 
@@ -141,7 +156,7 @@ def main():
                 dtype=pl.Float64,
             )
 
-            vehicle_ids.append(current_vehicles)
+            vehicle_ids.append(current_vehicles.cast(pl.Int32))
             geo_positions.append(current_geo)
             times.append(current_time)
             lanes.append(current_lanes)
@@ -182,7 +197,8 @@ def main():
     )
 
     df = lf.collect()
-    df.write_parquet(OUTPUT_PATH / "fcd.parquet", mkdir=True, compression="zstd")
+
+    write_parquet_with_options(df, OUTPUT_PATH / "fcd.parquet")
 
     print("Simulation data saved to", OUTPUT_PATH / "fcd.parquet")
     print(df)
@@ -217,8 +233,9 @@ def main():
             pl.Series(lon_noisy, dtype=pl.Float64).alias("lon"),
         )
 
-        noise_df.write_parquet(
-            OUTPUT_PATH / "fcd_noisy.parquet", mkdir=True, compression="zstd"
+        write_parquet_with_options(
+            noise_df,
+            OUTPUT_PATH / "fcd_noisy.parquet",
         )
 
         print("Noisy simulation data saved to", OUTPUT_PATH / "fcd_noisy.parquet")
