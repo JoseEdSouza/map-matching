@@ -38,6 +38,7 @@ dependencies = [
     "shapely>=2.1.1",
     "sumolib>=1.24.0",
     "traci>=1.24.0",
+    "types-networkx>=3.5.0.20251001",
     "voila>=0.5.8",
     "zstd>=1.5.7.0",
 ]
