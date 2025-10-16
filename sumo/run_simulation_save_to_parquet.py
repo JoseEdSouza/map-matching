@@ -316,9 +316,27 @@ def main():
     )
 
     lf = lf.with_columns(
+        pl.when(~pl.col("edge_id").cat.starts_with("node_"))
+        .then(pl.col("edge_id"))
+        .otherwise(None)
+        .alias("edge_id_valid")
+    )
+
+    lf = lf.with_columns(
+        pl.col("edge_id_valid")
+        .backward_fill(limit=None)
+        .over("vehicle_id")
+        .alias("edge_id")
+    )
+
+    lf = lf.drop("edge_id_valid")
+
+    lf = lf.with_columns(
         pl.col("geo_position").arr.get(0).alias("lon"),
         pl.col("geo_position").arr.get(1).alias("lat"),
     )
+
+    lf = lf.sort("time", "vehicle_id")
 
     df = lf.collect()
 
