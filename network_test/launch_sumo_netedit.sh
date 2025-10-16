@@ -1,6 +1,10 @@
 #!/bin/bash
 
-SIMULATION_PATH="$(pwd)/sumo/simulations/ohare-chicago-junctionless/simulation.sumocfg"
+NETWORK_FILE="$(pwd)/network_test/network.net.xml"
+TAZ_FILE="$(pwd)/network_test/grid_taz.add.xml"
+
+chmod -R a+rw "$NETWORK_FILE"
+chmod -R a+rw "$TAZ_FILE"
 
 export SUMO_HOME="/usr/share/sumo"
 
@@ -13,5 +17,4 @@ else
     echo "No NVIDIA GPU detected. Running with default settings."
 fi
 
-
-sumo-gui $SIMULATION_PATH
+netedit -s $NETWORK_FILE -a $TAZ_FILE
