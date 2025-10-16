@@ -1,17 +1,22 @@
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
 from typing import cast
 
 import sumolib
 import traci
+
+import geopandas as gpd
 import numpy as np
+import osmnx as ox
 import polars as pl
 
 from pyproj import Geod
 
 ROOT_PATH = Path(".").resolve().absolute()
-BASE_PATH = ROOT_PATH / "sumo/simulations/ohare-chicago"
-NETWORK_PATH = BASE_PATH / "network.net.xml"
+BASE_PATH = ROOT_PATH / "sumo/simulations/ohare-chicago-junctionless"
+ROAD_NETWORK_PATH = ROOT_PATH / "networks/graphml/ohare_network.graphml"
+SUMO_NETWORK_PATH = BASE_PATH / "network.net.xml"
 SIMULATION_PATH = BASE_PATH / "simulation.sumocfg"
 OUTPUT_PATH = BASE_PATH / "output"
 NOISE_METERS_STD: float | None = 5
@@ -25,72 +30,175 @@ type Lane = sumolib.net.lane.Lane
 type Conn = sumolib.net.connection.Connection
 
 
-def map_internal_lanes_to_osm_edges(network_path: Path) -> dict[str, str]:
+type NodeOSMID = str
+type ResolvePair = tuple[Edge, NodeOSMID]
+
+
+@lru_cache(maxsize=None)
+def resolve_lane_dest_node(net: Net, start_lane_id: str) -> ResolvePair | None:
     """
-    Scans a SUMO network file and creates a mapping from each internal LANE ID
-    (e.g., ':cluster_..._4_0') to its original OpenStreetMap edge/way ID.
+    Given a SUMO network and an internal lane ID, this function finds the
+    'to' edge ID that the internal lane connects to.
 
     Args:
-        network_path: The path to the .net.xml file.
+        net: The loaded sumolib network object.
+        start_lane_id: The ID of the internal lane (e.g., ':cluster_..._0').
 
     Returns:
-        A dictionary mapping internal lane IDs to original OSM edge IDs.
+        The ID of the 'to' edge if found, otherwise None.
     """
-    print(f"Loading network from {network_path}...")
-    net: Net = sumolib.net.readNet(network_path, withInternal=True)
-
-    internal_lane_to_osm_edge: dict[str, str] = {}
-
     try:
-        cluster_osm_maps: dict[str, dict[str, str]] = {}
-        for node in net.getNodes():
-            junction_id = node.getID()
-            if not junction_id.startswith("cluster"):
-                continue
+        current_lane: Lane = net.getLane(start_lane_id)
+        outgoing_connections: list[Conn] = current_lane.getOutgoing()
 
-            params = node.getParams()
-            orig_ids_str = params.get("origId")
-            orig_edge_ids_str = params.get("origEdgeIds")
+        if not outgoing_connections:
+            return None
 
-            if orig_ids_str and orig_edge_ids_str:
-                orig_ids_list = orig_ids_str.split()
-                orig_edge_ids_list = orig_edge_ids_str.split()
-                cluster_osm_maps[junction_id] = dict(
-                    zip(orig_ids_list, orig_edge_ids_list)
-                )
+        if len(outgoing_connections) > 1:
+            print(
+                f"Warning: Lane {start_lane_id} has multiple outgoing connections. Using the first one."
+            )
 
-        edges: list[Edge] = net.getEdges()
-        lanes: list[Lane] = []
-        for edge in edges:
-            lanes.extend(edge.getLanes())
+        next_connection = outgoing_connections[0]
+        destination_lane = next_connection.getToLane()
+        destination_lane_id = destination_lane.getID()
 
+        if destination_lane_id.startswith(":"):
+            return resolve_lane_dest_node(net, destination_lane_id)
+
+        destination_edge = destination_lane.getEdge()
+
+        # the "from" node of the destination edge is the "to" node of the current edge
+        to_node_id = destination_edge.getParams().get("origFrom", "Unknown")
+
+        return destination_edge, to_node_id
+
+    except KeyError:
+        return None
+
+
+@lru_cache(maxsize=None)
+def resolve_lane_origin_node(net: Net, start_lane_id: str) -> ResolvePair | None:
+    """
+    Given a SUMO network and an internal lane ID, this function finds the
+    'from' edge ID that the internal lane connects from.
+
+    Args:
+        net: The loaded sumolib network object.
+        start_lane_id: The ID of the internal lane (e.g., ':cluster_..._0').
+    Returns:
+        The ID of the 'from' edge if found, otherwise None.
+    """
+    try:
+        current_lane: Lane = net.getLane(start_lane_id)
+        incoming_connections: list[Conn] = current_lane.getIncomingConnections()
+
+        if not incoming_connections:
+            return None
+
+        if len(incoming_connections) > 1:
+            print(
+                f"Warning: Lane {start_lane_id} has multiple incoming connections. Using the first one."
+            )
+
+        previous_connection = incoming_connections[0]
+        incoming_lane = previous_connection.getFromLane()
+        incoming_lane_id = incoming_lane.getID()
+
+        if incoming_lane_id.startswith(":"):
+            return resolve_lane_origin_node(net, incoming_lane_id)
+
+        incoming_edge = incoming_lane.getEdge()
+
+        # the "to" node of the incoming edge is the "from" node of the current edge
+        from_node_id = incoming_edge.getParams().get("origTo", "Unknown")
+
+        return incoming_edge, from_node_id
+
+    except KeyError:
+        return None
+
+
+def resolve_lane_edges(
+    net: Net, start_lane_id: str
+) -> tuple[ResolvePair, ResolvePair] | None:
+    """
+    Given a SUMO network and an internal lane ID, this function finds both the
+    'from' and 'to' edge IDs that the internal lane connects.
+
+    Args:
+        net: The loaded sumolib network object.
+        start_lane_id: The ID of the internal lane (e.g., ':cluster_..._0').
+    Returns:
+        A tuple containing the Nodes of the 'from' and 'to' edges if found, otherwise None.
+    """
+    from_pair = resolve_lane_origin_node(net, start_lane_id)
+    to_pair = resolve_lane_dest_node(net, start_lane_id)
+
+    if not (from_pair and to_pair):
+        return None
+    return from_pair, to_pair
+
+
+def map_lane_to_edge(net: Net) -> dict[str, tuple[NodeOSMID, NodeOSMID]]:
+    """
+    Creates a mapping from internal lane IDs to their corresponding 'from' and 'to' edge IDs.
+
+    Args:
+        net: The loaded sumolib network object.
+    Returns:
+        A dictionary mapping internal lane IDs to tuples of ('from' edge ID, 'to' edge ID).
+    """
+    junction_to_osm_id: dict[str, tuple[str, str]] = {}
+
+    edges: list[Edge] = net.getEdges()
+    for edge in edges:
+        lanes: list[Lane] = edge.getLanes()
         for lane in lanes:
-            internal_lane_id = lane.getID()
-            if not internal_lane_id.startswith(":"):
+            lane_id = lane.getID()
+            if not lane_id.startswith(":cluster"):
                 continue
 
-            incoming_conns = lane.getIncomingConnections()
-            if not incoming_conns:
+            edge_ids = resolve_lane_edges(net, lane_id)
+            if not edge_ids:
+                print(f"Could not find edge IDs for lane {lane_id}")
                 continue
+            (_, from_osmid), (_, to_osmid) = edge_ids
+            junction_to_osm_id[lane_id] = (from_osmid, to_osmid)
 
-            connection = incoming_conns[0]
-            from_edge = connection.getFromLane().getEdge()
+    return junction_to_osm_id
 
-            orig_to_node = from_edge.getParams().get("origTo")
-            if not orig_to_node:
-                continue
 
-            base_cluster_id = lane.getEdge().getToNode().getID()
-            osm_map = cluster_osm_maps.get(base_cluster_id)
+def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str]:
+    """
+    Creates a mapping from internal lane IDs to their corresponding OSM edge IDs.
 
-            if osm_map and (orig_eid := osm_map.get(orig_to_node)):
-                internal_lane_to_osm_edge[internal_lane_id] = orig_eid
+    Args:
+        net: The loaded sumolib network object.
+    Returns:
+        A dictionary mapping internal lane IDs to OSM edge IDs.
+    """
+    lane_to_edge_map = map_lane_to_edge(net)
 
-    except Exception as e:
-        print(f"An error occurred while processing the network file: {e}")
-        raise
+    lane_to_edge_id_map: dict[str, str] = {}
 
-    return internal_lane_to_osm_edge
+    for lane_id, (from_osmid, to_osmid) in lane_to_edge_map.items():
+        if from_osmid == to_osmid:
+            lane_to_edge_id_map[lane_id] = f":{from_osmid}"
+            continue
+        
+        int_from_osmid, int_to_osmid = int(from_osmid), int(to_osmid)
+        key = (int_from_osmid, int_to_osmid, 0)
+        reverse_key = (int_to_osmid, int_from_osmid, 0)
+
+        if key in edges_gdf.index:
+            lane_to_edge_id_map[lane_id] = str(edges_gdf.loc[key, "osmid"])
+        elif reverse_key in edges_gdf.index:
+            lane_to_edge_id_map[lane_id] = str(edges_gdf.loc[reverse_key, "osmid"])
+        else:
+            print(f"Could not find OSM edge ID for lane {lane_id} with key {key}")
+
+    return lane_to_edge_id_map
 
 
 @contextmanager
@@ -118,8 +226,6 @@ def write_parquet_with_options(
 
 def main():
     cmd = ["sumo", "-c", str(SIMULATION_PATH)]
-
-    jid_to_osmid = map_internal_lanes_to_osm_edges(NETWORK_PATH)
 
     vehicle_ids = pl.Series(dtype=pl.Int32)
     geo_positions = pl.Series(dtype=pl.Array(pl.Float64, shape=2))
@@ -161,6 +267,14 @@ def main():
             times.append(current_time)
             lanes.append(current_lanes)
 
+
+    net = sumolib.net.readNet(SUMO_NETWORK_PATH)
+
+    G = ox.load_graphml(ROAD_NETWORK_PATH)
+    edges_gdf = ox.graph_to_gdfs(G, nodes=False, fill_edge_geometry=True)
+
+    jid_to_osmid = map_lane_to_edge_ids(net, edges_gdf)
+
     lf = pl.LazyFrame(
         (
             vehicle_ids.alias("vehicle_id"),
@@ -178,6 +292,13 @@ def main():
         .cast(pl.Categorical)
         .alias("mapped_lane_id")
     )
+
+    def get_next_edge_id(current:str, next_edge:tuple[str,str]) -> tuple[str,str]:
+        from_id, to_id = next_edge
+        for neighbor in G.neighbors(current):
+            if neighbor == to_id:
+                return neighbor
+        return current
 
     lf = lf.with_columns(
         pl.col("mapped_lane_id")
