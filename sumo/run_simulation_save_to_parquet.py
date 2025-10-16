@@ -175,6 +175,7 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
 
     Args:
         net: The loaded sumolib network object.
+        edges_gdf: A GeoDataFrame containing OSM edges with 'osmid' attribute.
     Returns:
         A dictionary mapping internal lane IDs to OSM edge IDs.
     """
@@ -184,9 +185,9 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
 
     for lane_id, (from_osmid, to_osmid) in lane_to_edge_map.items():
         if from_osmid == to_osmid:
-            lane_to_edge_id_map[lane_id] = f":{from_osmid}"
+            lane_to_edge_id_map[lane_id] = f"node_{from_osmid}"
             continue
-        
+
         int_from_osmid, int_to_osmid = int(from_osmid), int(to_osmid)
         key = (int_from_osmid, int_to_osmid, 0)
         reverse_key = (int_to_osmid, int_from_osmid, 0)
@@ -262,13 +263,12 @@ def main():
                 dtype=pl.Float64,
             )
 
-            vehicle_ids.append(current_vehicles.cast(pl.Int32))
-            geo_positions.append(current_geo)
-            times.append(current_time)
-            lanes.append(current_lanes)
+            vehicle_ids.extend(current_vehicles.cast(pl.Int32))
+            geo_positions.extend(current_geo)
+            times.extend(current_time)
+            lanes.extend(current_lanes)
 
-
-    net = sumolib.net.readNet(SUMO_NETWORK_PATH)
+    net = sumolib.net.readNet(SUMO_NETWORK_PATH, withInternal=True)
 
     G = ox.load_graphml(ROAD_NETWORK_PATH)
     edges_gdf = ox.graph_to_gdfs(G, nodes=False, fill_edge_geometry=True)
@@ -293,13 +293,6 @@ def main():
         .alias("mapped_lane_id")
     )
 
-    def get_next_edge_id(current:str, next_edge:tuple[str,str]) -> tuple[str,str]:
-        from_id, to_id = next_edge
-        for neighbor in G.neighbors(current):
-            if neighbor == to_id:
-                return neighbor
-        return current
-
     lf = lf.with_columns(
         pl.col("mapped_lane_id")
         .cast(pl.String)
@@ -309,7 +302,17 @@ def main():
 
     lf = lf.with_columns(
         pl.col("edge_id").str.starts_with("-").alias("reversed"),
-        pl.col("edge_id").str.replace("-", "").cast(pl.Categorical),
+        pl.col("edge_id").str.replace("-", ""),
+    )
+
+    is_node = pl.col("edge_id").cast(pl.Int64).is_in(G.nodes())
+
+    lf = lf.with_columns(
+        pl.when(is_node)
+        .then(pl.lit("node_") + pl.col("edge_id"))
+        .otherwise(pl.col("edge_id"))
+        .cast(pl.Categorical)
+        .alias("edge_id")
     )
 
     lf = lf.with_columns(
