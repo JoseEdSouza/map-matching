@@ -195,7 +195,7 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
         if key in edges_gdf.index:
             lane_to_edge_id_map[lane_id] = str(edges_gdf.loc[key, "osmid"])
         elif reverse_key in edges_gdf.index:
-            lane_to_edge_id_map[lane_id] = str(edges_gdf.loc[reverse_key, "osmid"])
+            lane_to_edge_id_map[lane_id] = f"node_{int_from_osmid}"
         else:
             print(f"Could not find OSM edge ID for lane {lane_id} with key {key}")
 
@@ -228,45 +228,38 @@ def write_parquet_with_options(
 def main():
     cmd = ["sumo", "-c", str(SIMULATION_PATH)]
 
-    vehicle_ids = pl.Series(dtype=pl.Int32)
-    geo_positions = pl.Series(dtype=pl.Array(pl.Float64, shape=2))
-    times = pl.Series(dtype=pl.Float64)
-    lanes = pl.Series(dtype=pl.String)
+    vehicle_ids = []
+    geo_positions = []
+    times = []
+    lanes = []
 
     with traci_session(cmd) as session:
         while cast(int, session.simulation.getMinExpectedNumber()) > 0:
             session.simulation.step()
 
-            current_vehicles = pl.Series(
-                session.vehicle.getIDList(), dtype=pl.String
-            ).cast(pl.Categorical)
+            current_vehicles = np.array(session.vehicle.getIDList())
 
             if len(current_vehicles) == 0:
                 continue
 
-            current_pos = current_vehicles.map_elements(
-                traci.vehicle.getPosition,
-                return_dtype=pl.Array(pl.Float64, shape=2),
+            current_pos = np.array(
+                [session.vehicle.getPosition(veh_id) for veh_id in current_vehicles]
             )
 
-            current_geo = current_pos.map_elements(
-                lambda pos: traci.simulation.convertGeo(pos[0], pos[1]),
-                return_dtype=pl.List(pl.Float64),
-            ).cast(pl.Array(pl.Float64, shape=2))
-
-            current_lanes = current_vehicles.map_elements(
-                session.vehicle.getLaneID, return_dtype=pl.String
+            current_geo = np.array(
+                [traci.simulation.convertGeo(x, y) for (x, y) in current_pos]
             )
 
-            current_time = pl.Series(
-                np.full(len(current_vehicles), session.simulation.getTime()),
-                dtype=pl.Float64,
+            current_lanes = np.array(
+                [session.vehicle.getLaneID(veh_id) for veh_id in current_vehicles]
             )
 
-            vehicle_ids.extend(current_vehicles.cast(pl.Int32))
-            geo_positions.extend(current_geo)
-            times.extend(current_time)
-            lanes.extend(current_lanes)
+            current_time = np.full(len(current_vehicles), session.simulation.getTime())
+
+            vehicle_ids.append(current_vehicles)
+            geo_positions.append(current_geo)
+            times.append(current_time)
+            lanes.append(current_lanes)
 
     net = sumolib.net.readNet(SUMO_NETWORK_PATH, withInternal=True)
 
@@ -277,10 +270,12 @@ def main():
 
     lf = pl.LazyFrame(
         (
-            vehicle_ids.alias("vehicle_id"),
-            geo_positions.alias("geo_position"),
-            times.alias("time"),
-            lanes.alias("raw_lane_id").cast(pl.Categorical),
+            pl.Series(np.concatenate(vehicle_ids)).cast(pl.Int64).alias("vehicle_id"),
+            pl.Series(np.concatenate(geo_positions))
+            .alias("geo_position")
+            .cast(pl.Array(pl.Float64, shape=2)),
+            pl.Series(np.concatenate(times)).cast(pl.Float64).alias("time"),
+            pl.Series(np.concatenate(lanes)).cast(pl.Categorical).alias("raw_lane_id"),
         )
     )
 
@@ -289,15 +284,11 @@ def main():
         .replace_strict(
             jid_to_osmid, default=pl.col("raw_lane_id"), return_dtype=pl.String
         )
-        .cast(pl.Categorical)
         .alias("mapped_lane_id")
     )
 
     lf = lf.with_columns(
-        pl.col("mapped_lane_id")
-        .cast(pl.String)
-        .str.extract(r"(-?\d+)(?:.*)", 1)
-        .alias("edge_id")
+        pl.col("mapped_lane_id").str.extract(r"(-?\d+)(?:.*)", 1).alias("edge_id")
     )
 
     lf = lf.with_columns(
@@ -311,9 +302,16 @@ def main():
         pl.when(is_node)
         .then(pl.lit("node_") + pl.col("edge_id"))
         .otherwise(pl.col("edge_id"))
-        .cast(pl.Categorical)
         .alias("edge_id")
     )
+
+    lf = lf.with_columns(
+        pl.col("raw_lane_id").cast(pl.Categorical),
+        pl.col("mapped_lane_id").cast(pl.Categorical),
+        pl.col("edge_id").cast(pl.Categorical),
+    )
+
+    lf = lf.with_columns(pl.col("edge_id").alias("node_mapped_id"))
 
     lf = lf.with_columns(
         pl.when(~pl.col("edge_id").cat.starts_with("node_"))
@@ -323,10 +321,7 @@ def main():
     )
 
     lf = lf.with_columns(
-        pl.col("edge_id_valid")
-        .backward_fill(limit=None)
-        .over("vehicle_id")
-        .alias("edge_id")
+        pl.col("edge_id_valid").backward_fill().over("vehicle_id").alias("edge_id")
     )
 
     lf = lf.drop("edge_id_valid")
