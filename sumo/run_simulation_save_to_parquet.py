@@ -3,6 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import cast
 
+import networkx as nx
 import sumolib
 import traci
 
@@ -12,6 +13,7 @@ import osmnx as ox
 import polars as pl
 
 from pyproj import Geod
+from gloe import transformer, partial_transformer
 
 ROOT_PATH = Path(".").resolve().absolute()
 BASE_PATH = ROOT_PATH / "sumo/simulations/ohare-chicago-junctionless"
@@ -19,7 +21,7 @@ ROAD_NETWORK_PATH = ROOT_PATH / "networks/graphml/ohare_network.graphml"
 SUMO_NETWORK_PATH = BASE_PATH / "network.net.xml"
 SIMULATION_PATH = BASE_PATH / "simulation.sumocfg"
 OUTPUT_PATH = BASE_PATH / "output"
-NOISE_METERS_STD: float | None = 5
+NOISE_METERS_STD: float  = 5
 RANDOM_SEED = 42
 
 
@@ -33,6 +35,15 @@ type Conn = sumolib.net.connection.Connection
 type NodeOSMID = str
 type ResolvePair = tuple[Edge, NodeOSMID]
 
+
+@contextmanager
+def traci_session(cmd: list[str]):
+    traci.start(cmd)
+    try:
+        yield traci
+    finally:
+        traci.close()
+        
 
 @lru_cache(maxsize=None)
 def resolve_lane_dest_node(net: Net, start_lane_id: str) -> ResolvePair | None:
@@ -202,30 +213,111 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
     return lane_to_edge_id_map
 
 
-@contextmanager
-def traci_session(cmd: list[str]):
-    traci.start(cmd)
-    try:
-        yield traci
-    finally:
-        traci.close()
+@partial_transformer
+def map_internal_junctions_to_edges(
+    lf: pl.LazyFrame, G_road: nx.MultiDiGraph, net: Net
+) -> pl.LazyFrame:
+    edges_gdf = ox.graph_to_gdfs(G_road, nodes=False, fill_edge_geometry=True)
 
+    jid_to_osmid = map_lane_to_edge_ids(net, edges_gdf)
 
-def write_parquet_with_options(
-    df: pl.DataFrame,
-    output_path: Path,
-) -> None:
-    df.write_parquet(
-        output_path,
-        mkdir=True,
-        compression="zstd",
-        compression_level=3,
-        row_group_size=100_000,
-        statistics=True,
+    lf = lf.with_columns(
+        pl.col("raw_lane_id")
+        .replace_strict(
+            jid_to_osmid, default=pl.col("raw_lane_id"), return_dtype=pl.String
+        )
+        .alias("mapped_lane_id")
     )
 
+    return lf
 
-def main():
+
+@transformer
+def map_remaining_lanes_to_edges(lf: pl.LazyFrame) -> pl.LazyFrame:
+    lf = lf.with_columns(
+        pl.col("mapped_lane_id").str.extract(r"(-?\d+)(?:.*)", 1).alias("edge_id")
+    )
+
+    lf = lf.with_columns(
+        pl.col("edge_id").str.starts_with("-").alias("reversed"),
+        pl.col("edge_id").str.replace("-", ""),
+    )
+
+    return lf
+
+
+@partial_transformer
+def label_unmapped_edges_as_nodes(
+    lf: pl.LazyFrame, G_road: nx.MultiDiGraph
+) -> pl.LazyFrame:
+    is_node = pl.col("edge_id").cast(pl.Int64).is_in(G_road.nodes())
+
+    lf = lf.with_columns(
+        pl.when(is_node)
+        .then(pl.lit("node_") + pl.col("edge_id"))
+        .otherwise(pl.col("edge_id"))
+        .alias("edge_id")
+    )
+
+    return lf
+
+
+@transformer
+def convert_strings_to_categorical(lf: pl.LazyFrame) -> pl.LazyFrame:
+    lf = lf.with_columns(
+        pl.col("raw_lane_id").cast(pl.Categorical),
+        pl.col("mapped_lane_id").cast(pl.Categorical),
+        pl.col("edge_id").cast(pl.Categorical),
+    )
+
+    lf = lf.with_columns(pl.col("edge_id").alias("node_mapped_id"))
+
+    return lf
+
+
+@transformer
+def fill_edge_ids_backward(lf: pl.LazyFrame) -> pl.LazyFrame:
+    """
+    Fill edge IDs that are actually node IDs by propagating the last valid edge ID backward (from future to past)
+    within each vehicle's trajectory."
+
+    Args:
+        lf (pl.LazyFrame): The input lazy frame containing vehicle trajectory data.
+
+    Returns:
+        pl.LazyFrame: The updated lazy frame with filled edge IDs.
+    """
+
+    lf = lf.with_columns(
+        pl.when(~pl.col("edge_id").cat.starts_with("node_"))
+        .then(pl.col("edge_id"))
+        .otherwise(None)
+        .alias("edge_id_valid")
+    )
+
+    lf = lf.with_columns(
+        pl.col("edge_id_valid").backward_fill().over("vehicle_id").alias("edge_id")
+    )
+
+    lf = lf.drop("edge_id_valid")
+
+    return lf
+
+
+@transformer
+def extract_coordinates_from_geo(lf: pl.LazyFrame) -> pl.LazyFrame:
+    lf = lf.with_columns(
+        pl.col("geo_position").arr.get(0).alias("lon"),
+        pl.col("geo_position").arr.get(1).alias("lat"),
+    )
+
+    lf = lf.sort("time", "vehicle_id")
+
+    return lf
+
+
+@transformer
+def run_simulation() -> pl.LazyFrame:
     cmd = ["sumo", "-c", str(SIMULATION_PATH)]
 
     vehicle_ids = []
@@ -261,14 +353,7 @@ def main():
             times.append(current_time)
             lanes.append(current_lanes)
 
-    net = sumolib.net.readNet(SUMO_NETWORK_PATH, withInternal=True)
-
-    G = ox.load_graphml(ROAD_NETWORK_PATH)
-    edges_gdf = ox.graph_to_gdfs(G, nodes=False, fill_edge_geometry=True)
-
-    jid_to_osmid = map_lane_to_edge_ids(net, edges_gdf)
-
-    lf = pl.LazyFrame(
+    df = pl.DataFrame(
         (
             pl.Series(np.concatenate(vehicle_ids)).cast(pl.Int64).alias("vehicle_id"),
             pl.Series(np.concatenate(geo_positions))
@@ -279,104 +364,88 @@ def main():
         )
     )
 
-    lf = lf.with_columns(
-        pl.col("raw_lane_id")
-        .replace_strict(
-            jid_to_osmid, default=pl.col("raw_lane_id"), return_dtype=pl.String
+    return df.lazy()
+
+
+@partial_transformer
+def apply_noise(
+    df: pl.DataFrame, noise_std_meters: float | None = None
+) -> pl.DataFrame:
+    if noise_std_meters is None:
+        return df
+
+    geod = Geod(ellps="WGS84")
+    rng = np.random.default_rng(RANDOM_SEED)
+
+    lon = df["lon"].to_numpy()
+    lat = df["lat"].to_numpy()
+
+    noise = rng.normal(0, noise_std_meters, size=(2, len(df)))
+    noise_east = noise[0]
+    noise_north = noise[1]
+
+    azimuth_east = np.full(len(df), 90)
+    azimuth_north = np.full(len(df), 0)
+
+    lon_temp, lat_temp, _ = geod.fwd(lon, lat, azimuth_east, noise_east)
+    lon_noisy, lat_noisy, _ = geod.fwd(lon_temp, lat_temp, azimuth_north, noise_north)
+
+    geo_positions_noisy = np.column_stack((lon, lat))
+
+    noise_df = df.with_columns(
+        pl.Series(
+            geo_positions_noisy,
+            dtype=pl.Array(pl.Float64, shape=2),
+        ).alias("geo_position"),
+        pl.Series(lat_noisy, dtype=pl.Float64).alias("lat"),
+        pl.Series(lon_noisy, dtype=pl.Float64).alias("lon"),
+    )
+
+    return noise_df
+
+
+@transformer
+def collect_lazyframe(lf: pl.LazyFrame) -> pl.DataFrame:
+    return lf.collect()
+
+@partial_transformer
+def write_parquet(df: pl.DataFrame, path: Path) -> pl.DataFrame:
+    df.write_parquet(
+        path,
+        mkdir=True,
+        compression="zstd",
+        compression_level=3,
+        row_group_size=100_000,
+        statistics=True,
+    )
+
+    return df
+
+
+def main() -> None:
+    net = sumolib.net.readNet(str(SUMO_NETWORK_PATH))
+    G_road = ox.load_graphml(ROAD_NETWORK_PATH)
+
+    pipeline = (
+        run_simulation
+        >> map_internal_junctions_to_edges(G_road, net)
+        >> map_remaining_lanes_to_edges
+        >> label_unmapped_edges_as_nodes(G_road)
+        >> convert_strings_to_categorical
+        >> fill_edge_ids_backward
+        >> extract_coordinates_from_geo
+        >> collect_lazyframe >> (
+            write_parquet(OUTPUT_PATH / "fcd_raw.parquet"),
+            apply_noise(NOISE_METERS_STD) >> write_parquet(OUTPUT_PATH / "fcd_noisy_raw.parquet")
         )
-        .alias("mapped_lane_id")
     )
 
-    lf = lf.with_columns(
-        pl.col("mapped_lane_id").str.extract(r"(-?\d+)(?:.*)", 1).alias("edge_id")
-    )
-
-    lf = lf.with_columns(
-        pl.col("edge_id").str.starts_with("-").alias("reversed"),
-        pl.col("edge_id").str.replace("-", ""),
-    )
-
-    is_node = pl.col("edge_id").cast(pl.Int64).is_in(G.nodes())
-
-    lf = lf.with_columns(
-        pl.when(is_node)
-        .then(pl.lit("node_") + pl.col("edge_id"))
-        .otherwise(pl.col("edge_id"))
-        .alias("edge_id")
-    )
-
-    lf = lf.with_columns(
-        pl.col("raw_lane_id").cast(pl.Categorical),
-        pl.col("mapped_lane_id").cast(pl.Categorical),
-        pl.col("edge_id").cast(pl.Categorical),
-    )
-
-    lf = lf.with_columns(pl.col("edge_id").alias("node_mapped_id"))
-
-    lf = lf.with_columns(
-        pl.when(~pl.col("edge_id").cat.starts_with("node_"))
-        .then(pl.col("edge_id"))
-        .otherwise(None)
-        .alias("edge_id_valid")
-    )
-
-    lf = lf.with_columns(
-        pl.col("edge_id_valid").backward_fill().over("vehicle_id").alias("edge_id")
-    )
-
-    lf = lf.drop("edge_id_valid")
-
-    lf = lf.with_columns(
-        pl.col("geo_position").arr.get(0).alias("lon"),
-        pl.col("geo_position").arr.get(1).alias("lat"),
-    )
-
-    lf = lf.sort("time", "vehicle_id")
-
-    df = lf.collect()
-
-    write_parquet_with_options(df, OUTPUT_PATH / "fcd.parquet")
-
-    print("Simulation data saved to", OUTPUT_PATH / "fcd.parquet")
+    df, df_noisy = pipeline()
+    print("Raw simulation data saved to", OUTPUT_PATH / "fcd_raw.parquet")
     print(df)
 
-    if NOISE_METERS_STD is not None:
-        geod = Geod(ellps="WGS84")
-        rng = np.random.default_rng(RANDOM_SEED)
-
-        lon = df["lon"].to_numpy()
-        lat = df["lat"].to_numpy()
-
-        noise = rng.normal(0, NOISE_METERS_STD, size=(2, len(df)))
-        noise_east = noise[0]
-        noise_north = noise[1]
-
-        azimuth_east = np.full(len(df), 90)
-        azimuth_north = np.full(len(df), 0)
-
-        lon_temp, lat_temp, _ = geod.fwd(lon, lat, azimuth_east, noise_east)
-        lon_noisy, lat_noisy, _ = geod.fwd(
-            lon_temp, lat_temp, azimuth_north, noise_north
-        )
-
-        geo_positions_noisy = np.column_stack((lon, lat))
-
-        noise_df = df.with_columns(
-            pl.Series(
-                geo_positions_noisy,
-                dtype=pl.Array(pl.Float64, shape=2),
-            ).alias("geo_position"),
-            pl.Series(lat_noisy, dtype=pl.Float64).alias("lat"),
-            pl.Series(lon_noisy, dtype=pl.Float64).alias("lon"),
-        )
-
-        write_parquet_with_options(
-            noise_df,
-            OUTPUT_PATH / "fcd_noisy.parquet",
-        )
-
-        print("Noisy simulation data saved to", OUTPUT_PATH / "fcd_noisy.parquet")
-        print(noise_df)
+    print("Noisy raw simulation data saved to", OUTPUT_PATH / "fcd_noisy_raw.parquet")
+    print(df_noisy)
 
 
 if __name__ == "__main__":
