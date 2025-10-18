@@ -392,6 +392,7 @@ def identify_disconnected_pairs(
     Identifies unique (next_edge, current_node) pairs that are not directly connected in the graph.
     """
     osm_edges_lf = build_osm_edges_lazyframe(G_road)
+
     paired_filtered_trajectories = cleaned_node_lf.with_columns(
         pl.concat_list(
             pl.col("next_edge_id"),
@@ -498,11 +499,6 @@ def generate_path_correction_rows(
         how="inner",
     )
 
-    print(
-        "disconnected_trajectories_w_pathway shape",
-        disconnected_trajectories_w_pathway.collect().shape,
-    )
-
     newly_created_rows_lf = (
         disconnected_trajectories_w_pathway
         # 1. Explode the list of edges into separate rows
@@ -556,7 +552,6 @@ def combine_and_finalize_trajectories(
     good_rows_lf = original_lf.join(
         new_rows_lf, on=["vehicle_id", "node_mapped_id", "raw_lane_id"], how="anti"
     )
-    print("anti-joined good_rows_lf shape", good_rows_lf.collect().shape)
 
     # Align schemas before concatenation
     new_rows_lf = new_rows_lf.select(good_rows_lf.collect_schema().names())
@@ -670,7 +665,7 @@ def print_shape(lf: pl.LazyFrame, context: str) -> pl.LazyFrame:
 
 
 def main() -> None:
-    net = sumolib.net.readNet(str(SUMO_NETWORK_PATH))
+    net = sumolib.net.readNet(SUMO_NETWORK_PATH, withInternal=True)
     G_road = ox.load_graphml(ROAD_NETWORK_PATH)
 
     extract_lane_to_osmid = (
@@ -699,19 +694,6 @@ def main() -> None:
         )
         >> combine_and_finalize_trajectories
     )
-
-    @partial_transformer
-    def load_fcd_data(_, path) -> pl.LazyFrame:
-        return pl.scan_parquet(path)
-
-    # pipeline_2 = (
-    #     load_fcd_data(path=OUTPUT_PATH / "fcd.parquet")
-    #     >> apply_pathway_correction
-    #     >> collect_lazyframe
-    # )
-    #
-    # df = pipeline_2()
-    # print(df)
 
     pipeline = (
         run_simulation(max_steps=SIMULATION_MAX_STEPS)
