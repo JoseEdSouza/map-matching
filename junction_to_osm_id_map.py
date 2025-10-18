@@ -1,8 +1,10 @@
 from functools import lru_cache
 from pathlib import Path
+import re
 import sumolib
 
 import geopandas as gpd
+import networkx as nx
 import osmnx as ox
 
 type Net = sumolib.net.Net
@@ -137,7 +139,7 @@ def map_lane_to_edge(net: Net) -> dict[str, tuple[NodeOSMID, NodeOSMID]]:
         lanes: list[Lane] = edge.getLanes()
         for lane in lanes:
             lane_id = lane.getID()
-            if not lane_id.startswith(":cluster"):
+            if not lane_id.startswith(":cluster_"):
                 continue
 
             edge_ids = resolve_lane_edges(net, lane_id)
@@ -156,6 +158,7 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
 
     Args:
         net: The loaded sumolib network object.
+        edges_gdf: A GeoDataFrame containing OSM edges with 'osmid' attribute.
     Returns:
         A dictionary mapping internal lane IDs to OSM edge IDs.
     """
@@ -165,9 +168,9 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
 
     for lane_id, (from_osmid, to_osmid) in lane_to_edge_map.items():
         if from_osmid == to_osmid:
-            lane_to_edge_id_map[lane_id] = f":{from_osmid}"
+            lane_to_edge_id_map[lane_id] = f"node_{from_osmid}"
             continue
-        
+
         int_from_osmid, int_to_osmid = int(from_osmid), int(to_osmid)
         key = (int_from_osmid, int_to_osmid, 0)
         reverse_key = (int_to_osmid, int_from_osmid, 0)
@@ -175,7 +178,7 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
         if key in edges_gdf.index:
             lane_to_edge_id_map[lane_id] = str(edges_gdf.loc[key, "osmid"])
         elif reverse_key in edges_gdf.index:
-            lane_to_edge_id_map[lane_id] = str(edges_gdf.loc[reverse_key, "osmid"])
+            lane_to_edge_id_map[lane_id] = f"node_{int_from_osmid}"
         else:
             print(f"Could not find OSM edge ID for lane {lane_id} with key {key}")
 
