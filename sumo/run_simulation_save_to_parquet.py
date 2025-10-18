@@ -562,7 +562,7 @@ def combine_and_finalize_trajectories(
     new_rows_lf = new_rows_lf.select(good_rows_lf.collect_schema().names())
 
     # Combine good rows with the new path rows
-    corrected_trajectories_lf = pl.concat([good_rows_lf, new_rows_lf])
+    corrected_trajectories_lf = pl.concat([good_rows_lf, new_rows_lf]).lazy()
 
     # Sort to ensure trajectory integrity and collect the final result
     final_lf = corrected_trajectories_lf.sort("vehicle_id", "time").with_columns(
@@ -689,27 +689,15 @@ def main() -> None:
 
     apply_pathway_correction = (
         forward[pl.LazyFrame]()
-        >> print_shape("initial_trajectories")
         >> (
             forward[pl.LazyFrame](),
             select_and_prepare_node_passages
-            >> print_shape("selected_node_passages")
-            >> custom_debug
             >> attach(
-                identify_disconnected_pairs(G_road)
-                >> print_shape("identified_disconnected_pairs")
-                >> custom_debug
-                >> find_connection_pathways(G_road)
-                >> print_shape("found_pathways")
-                >> custom_debug
+                identify_disconnected_pairs(G_road) >> find_connection_pathways(G_road)
             )
-            >> generate_path_correction_rows
-            >> print_shape("generated_correction_rows")
-            >> custom_debug,
+            >> generate_path_correction_rows,
         )
         >> combine_and_finalize_trajectories
-        >> print_shape("finalized_trajectories")
-        >> custom_debug
     )
 
     @partial_transformer
