@@ -393,9 +393,7 @@ def identify_disconnected_pairs(
     # Explodes the dataframe so each node of an edge gets its own row
     exploded_pairs = pairs_w_edges.explode("edges")
     exploded_pairs = exploded_pairs.with_columns(
-        pl.col("edges")
-        .list.contains(pl.col("node_osmid"))
-        .alias("connected")
+        pl.col("edges").list.contains(pl.col("node_osmid")).alias("connected")
         # it means one of the nodes of the edge is the node_osmid
     )
 
@@ -726,8 +724,7 @@ def main() -> None:
         >> (
             forward[pl.LazyFrame](),
             apply_noise(noise_std=NOISE_METERS_STD),
-            ensure_pathway_connection
-            >> attach(find_incomplete_vehicle_trajectories),
+            ensure_pathway_connection >> attach(find_incomplete_vehicle_trajectories),
         )
     )
 
@@ -744,7 +741,6 @@ def main() -> None:
         write_parquet(df, output_file)
         print(f"Saved output to {output_file}")
         print(df)
-
 
 
 if __name__ == "__main__":

@@ -1,10 +1,8 @@
 from functools import lru_cache
 from pathlib import Path
-import re
 import sumolib
 
 import geopandas as gpd
-import networkx as nx
 import osmnx as ox
 
 type Net = sumolib.net.Net
