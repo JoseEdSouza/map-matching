@@ -39,15 +39,6 @@ type NodeOSMID = str
 type ResolvePair = tuple[Edge, NodeOSMID]
 
 
-@contextmanager
-def traci_session(cmd: list[str]):
-    traci.start(cmd)
-    try:
-        yield traci
-    finally:
-        traci.close()
-
-
 @lru_cache(maxsize=None)
 def resolve_lane_dest_node(net: Net, start_lane_id: str) -> ResolvePair | None:
     """
@@ -304,23 +295,6 @@ def extract_lon_lat_from_geo(lf: pl.LazyFrame) -> pl.LazyFrame:
     return lf
 
 
-@lru_cache(maxsize=None)
-def find_pathway(G_road: nx.MultiDiGraph, source: int, target: int) -> list[int] | None:
-    try:
-        path = nx.shortest_path(G_road, source=source, target=target, weight="length")
-        edges_path = list((x, y, 0) for x, y in zip(path[:-1], path[1:]))
-        edge_data = list(G_road.edges[edge]["osmid"] for edge in edges_path)
-
-        res = []
-        for ed in edge_data:
-            if ed not in res:
-                res.append(ed)
-        return res
-
-    except nx.NetworkXNoPath:
-        return None
-
-
 @partial_transformer
 def apply_noise(lf: pl.LazyFrame, noise_std: float | None = None) -> pl.LazyFrame:
     """Applies Gaussian noise to the latitude and longitude coordinates in the DataFrame."""
@@ -439,6 +413,23 @@ def identify_disconnected_pairs(
     )
 
     return disconnected_pairs_lf
+
+
+@lru_cache(maxsize=None)
+def find_pathway(G_road: nx.MultiDiGraph, source: int, target: int) -> list[int] | None:
+    try:
+        path = nx.shortest_path(G_road, source=source, target=target, weight="length")
+        edges_path = list((x, y, 0) for x, y in zip(path[:-1], path[1:]))
+        edge_data = list(G_road.edges[edge]["osmid"] for edge in edges_path)
+
+        res = []
+        for ed in edge_data:
+            if ed not in res:
+                res.append(ed)
+        return res
+
+    except nx.NetworkXNoPath:
+        return None
 
 
 @partial_transformer
@@ -583,6 +574,15 @@ def build_osm_edges_lazyframe(G_road: nx.MultiDiGraph) -> pl.LazyFrame:
     return edges_pl_lazy
 
 
+@contextmanager
+def traci_session(cmd: list[str]):
+    traci.start(cmd)
+    try:
+        yield traci
+    finally:
+        traci.close()
+
+
 @partial_transformer
 def run_simulation(_, max_steps: int | None = None) -> pl.LazyFrame:
     """Runs the SUMO simulation and collects vehicle data for each step and gathers it into a Polars DataFrame."""
@@ -641,7 +641,7 @@ def run_simulation(_, max_steps: int | None = None) -> pl.LazyFrame:
 
 
 @transformer
-def identify_vehicles_with_incomplete_trajectories(
+def find_incomplete_vehicle_trajectories(
     lf: pl.LazyFrame,
 ) -> pl.LazyFrame:
     """
@@ -663,7 +663,7 @@ def sort_by_vehicle_and_time(lf: pl.LazyFrame) -> pl.LazyFrame:
     return lf
 
 
-def filter_complete_trajectories(
+def remove_incomplete_vehicle_trajectories(
     lf: pl.LazyFrame,
     incomplete_vids_lf: pl.LazyFrame,
 ) -> pl.LazyFrame:
@@ -727,7 +727,7 @@ def main() -> None:
             forward[pl.LazyFrame](),
             apply_noise(noise_std=NOISE_METERS_STD),
             ensure_pathway_connection
-            >> attach(identify_vehicles_with_incomplete_trajectories),
+            >> attach(find_incomplete_vehicle_trajectories),
         )
     )
 
@@ -738,12 +738,13 @@ def main() -> None:
         ("fcd_noisy", lf_noisy),
         ("fcd_resolved", lf_resolved),
     ]:
-        lf = filter_complete_trajectories(lf, incomplete_vehicles)
+        lf = remove_incomplete_vehicle_trajectories(lf, incomplete_vehicles)
         df = lf.collect()
         output_file = OUTPUT_PATH / f"{filename}.parquet"
         write_parquet(df, output_file)
         print(f"Saved output to {output_file}")
         print(df)
+
 
 
 if __name__ == "__main__":
