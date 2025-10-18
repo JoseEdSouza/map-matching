@@ -43,20 +43,13 @@ def traci_session(cmd: list[str]):
         yield traci
     finally:
         traci.close()
-        
+
 
 @lru_cache(maxsize=None)
 def resolve_lane_dest_node(net: Net, start_lane_id: str) -> ResolvePair | None:
     """
     Given a SUMO network and an internal lane ID, this function finds the
     'to' edge ID that the internal lane connects to.
-
-    Args:
-        net: The loaded sumolib network object.
-        start_lane_id: The ID of the internal lane (e.g., ':cluster_..._0').
-
-    Returns:
-        The ID of the 'to' edge if found, otherwise None.
     """
     try:
         current_lane: Lane = net.getLane(start_lane_id)
@@ -93,12 +86,6 @@ def resolve_lane_origin_node(net: Net, start_lane_id: str) -> ResolvePair | None
     """
     Given a SUMO network and an internal lane ID, this function finds the
     'from' edge ID that the internal lane connects from.
-
-    Args:
-        net: The loaded sumolib network object.
-        start_lane_id: The ID of the internal lane (e.g., ':cluster_..._0').
-    Returns:
-        The ID of the 'from' edge if found, otherwise None.
     """
     try:
         current_lane: Lane = net.getLane(start_lane_id)
@@ -136,13 +123,8 @@ def resolve_lane_edges(
     """
     Given a SUMO network and an internal lane ID, this function finds both the
     'from' and 'to' edge IDs that the internal lane connects.
-
-    Args:
-        net: The loaded sumolib network object.
-        start_lane_id: The ID of the internal lane (e.g., ':cluster_..._0').
-    Returns:
-        A tuple containing the Nodes of the 'from' and 'to' edges if found, otherwise None.
     """
+
     from_pair = resolve_lane_origin_node(net, start_lane_id)
     to_pair = resolve_lane_dest_node(net, start_lane_id)
 
@@ -154,11 +136,6 @@ def resolve_lane_edges(
 def map_lane_to_edge(net: Net) -> dict[str, tuple[NodeOSMID, NodeOSMID]]:
     """
     Creates a mapping from internal lane IDs to their corresponding 'from' and 'to' edge IDs.
-
-    Args:
-        net: The loaded sumolib network object.
-    Returns:
-        A dictionary mapping internal lane IDs to tuples of ('from' edge ID, 'to' edge ID).
     """
     junction_to_osm_id: dict[str, tuple[str, str]] = {}
 
@@ -183,12 +160,6 @@ def map_lane_to_edge(net: Net) -> dict[str, tuple[NodeOSMID, NodeOSMID]]:
 def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str]:
     """
     Creates a mapping from internal lane IDs to their corresponding OSM edge IDs.
-
-    Args:
-        net: The loaded sumolib network object.
-        edges_gdf: A GeoDataFrame containing OSM edges with 'osmid' attribute.
-    Returns:
-        A dictionary mapping internal lane IDs to OSM edge IDs.
     """
     lane_to_edge_map = map_lane_to_edge(net)
 
@@ -217,6 +188,9 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
 def map_internal_junctions_to_edges(
     lf: pl.LazyFrame, G_road: nx.MultiDiGraph, net: Net
 ) -> pl.LazyFrame:
+    """
+    Maps internal junction lane IDs to edge IDs using the SUMO network and OSM road graph.
+    """
     edges_gdf = ox.graph_to_gdfs(G_road, nodes=False, fill_edge_geometry=True)
 
     jid_to_osmid = map_lane_to_edge_ids(net, edges_gdf)
@@ -234,10 +208,18 @@ def map_internal_junctions_to_edges(
 
 @transformer
 def map_remaining_lanes_to_edges(lf: pl.LazyFrame) -> pl.LazyFrame:
+    """
+    Maps remaining lane IDs that are not internal junctions to edge IDs by extracting numeric parts.
+    """
     lf = lf.with_columns(
         pl.col("mapped_lane_id").str.extract(r"(-?\d+)(?:.*)", 1).alias("edge_id")
     )
 
+    return lf
+
+@transformer
+def mark_reversed_edge_ids(lf: pl.LazyFrame) -> pl.LazyFrame:
+    """Marks edge IDs that are reversed (start with '-') and removes the '-' prefix."""
     lf = lf.with_columns(
         pl.col("edge_id").str.starts_with("-").alias("reversed"),
         pl.col("edge_id").str.replace("-", ""),
@@ -245,11 +227,15 @@ def map_remaining_lanes_to_edges(lf: pl.LazyFrame) -> pl.LazyFrame:
 
     return lf
 
-
 @partial_transformer
 def label_unmapped_edges_as_nodes(
     lf: pl.LazyFrame, G_road: nx.MultiDiGraph
 ) -> pl.LazyFrame:
+    """ 
+    Labels edge IDs that are actually node IDs by prefixing them with 'node_'.
+    After this transformation, all edge IDs that correspond to nodes in the road graph
+    will be clearly identified.
+    """
     is_node = pl.col("edge_id").cast(pl.Int64).is_in(G_road.nodes())
 
     lf = lf.with_columns(
@@ -264,6 +250,10 @@ def label_unmapped_edges_as_nodes(
 
 @transformer
 def convert_strings_to_categorical(lf: pl.LazyFrame) -> pl.LazyFrame:
+    """ 
+    Converts string columns to categorical data types for efficiency.
+    Specifically, converts 'raw_lane_id', 'mapped_lane_id', and 'edge_id' to categorical types.
+    """
     lf = lf.with_columns(
         pl.col("raw_lane_id").cast(pl.Categorical),
         pl.col("mapped_lane_id").cast(pl.Categorical),
@@ -280,12 +270,6 @@ def fill_edge_ids_backward(lf: pl.LazyFrame) -> pl.LazyFrame:
     """
     Fill edge IDs that are actually node IDs by propagating the last valid edge ID backward (from future to past)
     within each vehicle's trajectory."
-
-    Args:
-        lf (pl.LazyFrame): The input lazy frame containing vehicle trajectory data.
-
-    Returns:
-        pl.LazyFrame: The updated lazy frame with filled edge IDs.
     """
 
     lf = lf.with_columns(
@@ -306,6 +290,7 @@ def fill_edge_ids_backward(lf: pl.LazyFrame) -> pl.LazyFrame:
 
 @transformer
 def extract_coordinates_from_geo(lf: pl.LazyFrame) -> pl.LazyFrame:
+    """ Extracts longitude and latitude from the 'geo_position' array column."""
     lf = lf.with_columns(
         pl.col("geo_position").arr.get(0).alias("lon"),
         pl.col("geo_position").arr.get(1).alias("lat"),
@@ -318,6 +303,7 @@ def extract_coordinates_from_geo(lf: pl.LazyFrame) -> pl.LazyFrame:
 
 @transformer
 def run_simulation() -> pl.LazyFrame:
+    """Runs the SUMO simulation and collects vehicle data for each step and gathers it into a Polars DataFrame."""
     cmd = ["sumo", "-c", str(SIMULATION_PATH)]
 
     vehicle_ids = []
@@ -371,6 +357,7 @@ def run_simulation() -> pl.LazyFrame:
 def apply_noise(
     df: pl.DataFrame, noise_std_meters: float | None = None
 ) -> pl.DataFrame:
+    """Applies Gaussian noise to the latitude and longitude coordinates in the DataFrame."""
     if noise_std_meters is None:
         return df
 
@@ -430,6 +417,7 @@ def main() -> None:
         run_simulation
         >> map_internal_junctions_to_edges(G_road, net)
         >> map_remaining_lanes_to_edges
+        >> mark_reversed_edge_ids
         >> label_unmapped_edges_as_nodes(G_road)
         >> convert_strings_to_categorical
         >> fill_edge_ids_backward
