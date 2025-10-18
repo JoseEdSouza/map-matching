@@ -1,7 +1,7 @@
 <configuration>
     <input>
         <net-file value="network.net.xml"/>
-        <route-files value="optimized_routes.rou.xml"/>
+        <route-files value="random_routes.rou.xml"/>
         <additional-files value="grid_taz.add.xml"/>
     </input>
 
