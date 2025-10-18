@@ -12,9 +12,10 @@ import numpy as np
 import osmnx as ox
 import polars as pl
 
-from pyproj import Geod
 from gloe import transformer, partial_transformer
 from gloe.utils import attach, forward
+from pyproj import Geod
+
 
 ROOT_PATH = Path(__file__).parent.parent.resolve()
 BASE_PATH = ROOT_PATH / "sumo/simulations/ohare-chicago-junctionless"
@@ -293,14 +294,12 @@ def fill_edge_ids_backward(lf: pl.LazyFrame) -> pl.LazyFrame:
 
 
 @transformer
-def extract_coordinates_from_geo(lf: pl.LazyFrame) -> pl.LazyFrame:
+def extract_lon_lat_from_geo(lf: pl.LazyFrame) -> pl.LazyFrame:
     """Extracts longitude and latitude from the 'geo_position' array column."""
     lf = lf.with_columns(
         pl.col("geo_position").arr.get(0).alias("lon"),
         pl.col("geo_position").arr.get(1).alias("lat"),
     )
-
-    lf = lf.sort("time", "vehicle_id")
 
     return lf
 
@@ -323,10 +322,12 @@ def find_pathway(G_road: nx.MultiDiGraph, source: int, target: int) -> list[int]
 
 
 @partial_transformer
-def apply_noise(df: pl.DataFrame, noise_std: float | None = None) -> pl.DataFrame:
+def apply_noise(lf: pl.LazyFrame, noise_std: float | None = None) -> pl.LazyFrame:
     """Applies Gaussian noise to the latitude and longitude coordinates in the DataFrame."""
     if noise_std is None:
-        return df
+        return lf
+
+    df = lf.collect()
 
     geod = Geod(ellps="WGS84")
     rng = np.random.default_rng(RANDOM_SEED)
@@ -355,7 +356,7 @@ def apply_noise(df: pl.DataFrame, noise_std: float | None = None) -> pl.DataFram
         pl.Series(lon_noisy, dtype=pl.Float64).alias("lon"),
     )
 
-    return noise_df
+    return noise_df.lazy()
 
 
 @transformer
@@ -567,25 +568,6 @@ def combine_and_finalize_trajectories(
     return final_lf
 
 
-@transformer
-def collect_lazyframe(lf: pl.LazyFrame) -> pl.DataFrame:
-    return lf.collect()
-
-
-@partial_transformer
-def write_parquet(df: pl.DataFrame, path: Path) -> pl.DataFrame:
-    df.write_parquet(
-        path,
-        mkdir=True,
-        compression="zstd",
-        compression_level=3,
-        row_group_size=100_000,
-        statistics=True,
-    )
-
-    return df
-
-
 def build_osm_edges_lazyframe(G_road: nx.MultiDiGraph) -> pl.LazyFrame:
     edges_gdf = ox.graph_to_gdfs(G_road, nodes=False, fill_edge_geometry=True).to_crs(
         epsg=4326
@@ -658,31 +640,72 @@ def run_simulation(_, max_steps: int | None = None) -> pl.LazyFrame:
     return lf
 
 
-@partial_transformer
-def print_shape(lf: pl.LazyFrame, context: str) -> pl.LazyFrame:
-    print("Shape after", context, ":", lf.collect().shape)
+@transformer
+def identify_vehicles_with_incomplete_trajectories(
+    lf: pl.LazyFrame,
+) -> pl.LazyFrame:
+    """
+    Identifies vehicles with incomplete trajectories (i.e., those that do not start and end on valid edges).
+    """
+    incomplete_vids_lf = (
+        lf.filter(pl.col("edge_id").is_null()).select(pl.col("vehicle_id")).unique()
+    )
+
+    return incomplete_vids_lf
+
+
+@transformer
+def sort_by_vehicle_and_time(lf: pl.LazyFrame) -> pl.LazyFrame:
+    """
+    Sorts the trajectories by vehicle ID and time to ensure proper ordering.
+    """
+    lf = lf.sort(["vehicle_id", "time"])
     return lf
+
+
+def filter_complete_trajectories(
+    lf: pl.LazyFrame,
+    incomplete_vids_lf: pl.LazyFrame,
+) -> pl.LazyFrame:
+    """
+    Filters out vehicles with incomplete trajectories from the main DataFrame.
+    """
+    complete_trajectories_lf = lf.join(
+        incomplete_vids_lf,
+        on="vehicle_id",
+        how="anti",
+    )
+
+    return complete_trajectories_lf
+
+
+def write_parquet(df: pl.DataFrame, path: Path) -> pl.DataFrame:
+    df.write_parquet(
+        path,
+        mkdir=True,
+        compression="zstd",
+        compression_level=3,
+        row_group_size=100_000,
+        statistics=True,
+    )
+
+    return df
 
 
 def main() -> None:
     net = sumolib.net.readNet(SUMO_NETWORK_PATH, withInternal=True)
     G_road = ox.load_graphml(ROAD_NETWORK_PATH)
 
-    extract_lane_to_osmid = (
+    map_lanes_to_osmid = (
         map_internal_junctions_to_edges(G_road, net)
         >> map_remaining_lanes_to_edges
         >> mark_reversed_edge_ids
         >> label_unmapped_edges_as_nodes(G_road)
         >> convert_strings_to_categorical
         >> fill_edge_ids_backward
-        >> extract_coordinates_from_geo
     )
 
-    @transformer
-    def custom_debug(in_data):
-        return in_data
-
-    apply_pathway_correction = (
+    ensure_pathway_connection = (
         forward[pl.LazyFrame]()
         >> (
             forward[pl.LazyFrame](),
@@ -697,27 +720,30 @@ def main() -> None:
 
     pipeline = (
         run_simulation(max_steps=SIMULATION_MAX_STEPS)
-        >> extract_lane_to_osmid
+        >> map_lanes_to_osmid
+        >> extract_lon_lat_from_geo
+        >> sort_by_vehicle_and_time
         >> (
-            collect_lazyframe >> write_parquet(OUTPUT_PATH / "fcd_raw.parquet"),
-            collect_lazyframe
-            >> apply_noise(noise_std=NOISE_METERS_STD)
-            >> write_parquet(OUTPUT_PATH / "fcd_noisy.parquet"),
-            apply_pathway_correction
-            >> collect_lazyframe
-            >> write_parquet(OUTPUT_PATH / "fcd_resolved.parquet"),
+            forward[pl.LazyFrame](),
+            apply_noise(noise_std=NOISE_METERS_STD),
+            ensure_pathway_connection
+            >> attach(identify_vehicles_with_incomplete_trajectories),
         )
     )
 
-    df, df_noisy, df_resolved = pipeline()
-    print("Raw simulation data saved to", OUTPUT_PATH / "fcd_raw.parquet")
-    print(df)
+    lf_raw, lf_noisy, (incomplete_vehicles, lf_resolved) = pipeline()
 
-    print("Noisy raw simulation data saved to", OUTPUT_PATH / "fcd_noisy_raw.parquet")
-    print(df_noisy)
-
-    print("Resolved pathway data saved to", OUTPUT_PATH / "fcd_resolved.parquet")
-    print(df_resolved)
+    for filename, lf in [
+        ("fcd_raw", lf_raw),
+        ("fcd_noisy", lf_noisy),
+        ("fcd_resolved", lf_resolved),
+    ]:
+        lf = filter_complete_trajectories(lf, incomplete_vehicles)
+        df = lf.collect()
+        output_file = OUTPUT_PATH / f"{filename}.parquet"
+        write_parquet(df, output_file)
+        print(f"Saved output to {output_file}")
+        print(df)
 
 
 if __name__ == "__main__":
