@@ -171,6 +171,10 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
         if key in edges_gdf.index:
             lane_to_edge_id_map[lane_id] = str(edges_gdf.loc[key, "osmid"])
         elif reverse_key in edges_gdf.index:
+            # it means a junction internal lane is reversely mapped to a road edge
+            # it means this lane is a simplification of a U-turn maneuver
+            # so it is treated as a node lane so the pathfinding step can handle it properly
+            # it will be filled later with one or more valid edges ids connecting the two edges.
             lane_to_edge_id_map[lane_id] = f"node_{int_from_osmid}"
         else:
             print(f"Could not find OSM edge ID for lane {lane_id} with key {key}")
@@ -393,7 +397,9 @@ def identify_disconnected_pairs(
     # Explodes the dataframe so each node of an edge gets its own row
     exploded_pairs = pairs_w_edges.explode("edges")
     exploded_pairs = exploded_pairs.with_columns(
-        pl.col("edges").list.contains(pl.col("node_osmid")).alias("connected")
+        pl.col("edges")
+        .list.contains(pl.col("node_osmid"))
+        .alias("connected")
         # it means one of the nodes of the edge is the node_osmid
     )
 
@@ -479,7 +485,6 @@ def generate_path_correction_rows(
     """
     Generates new trajectory rows based on the calculated connection pathways.
     """
-    # cleaned_node_lf, pathways_lf = input_lfs
 
     row_identifier = ["vehicle_id", "time", "next_edge_id", "node_osmid"]
 
@@ -509,7 +514,7 @@ def generate_path_correction_rows(
         .select(
             pl.col("vehicle_id"),
             pl.col("new_time").alias("time"),
-            pl.col("new_edge_id").alias("edge_id"),  # This is the corrected edge
+            pl.col("new_edge_id").alias("edge_id"),  # corrected edge
             pl.col("geo_position"),
             pl.col("raw_lane_id"),
             pl.col("node_mapped_id"),
@@ -531,7 +536,6 @@ def combine_and_finalize_trajectories(
     """
     Combines the original 'good' trajectories with the newly generated correction rows.
     """
-    # original_lf, new_rows_lf = input_lfs
 
     # Cast edge_id in original_lf to join properly
     original_lf = original_lf.with_columns(
