@@ -102,7 +102,7 @@ def resolve_lane_origin_node(net: Net, start_lane_id: str) -> ResolvePair | None
 
         incoming_edge = incoming_lane.getEdge()
 
-        # the "to" node of the incoming edge is the "from" node of the current edge
+        # the "to" node of the origin edge is the "from" node of the current edge
         from_node_id = incoming_edge.getParams().get("origTo", "Unknown")
 
         return incoming_edge, from_node_id
@@ -171,9 +171,9 @@ def map_lane_to_edge_ids(net: Net, edges_gdf: gpd.GeoDataFrame) -> dict[str, str
         if key in edges_gdf.index:
             lane_to_edge_id_map[lane_id] = str(edges_gdf.loc[key, "osmid"])
         elif reverse_key in edges_gdf.index:
-            # it means a junction internal lane is reversely mapped to a road edge
-            # it means this lane is a simplification of a U-turn maneuver
-            # so it is treated as a node lane so the pathfinding step can handle it properly
+            # It means a junction internal lane is reversely mapped to a road edge.
+            # This lane is a simplification of a U-turn maneuver.
+            # It is treated as a node lane, so the pathfinding step can handle it properly.
             # it will be filled later with one or more valid edges ids connecting the two edges.
             lane_to_edge_id_map[lane_id] = f"node_{int_from_osmid}"
         else:
@@ -269,7 +269,8 @@ def convert_strings_to_categorical(lf: pl.LazyFrame) -> pl.LazyFrame:
 def fill_edge_ids_backward(lf: pl.LazyFrame) -> pl.LazyFrame:
     """
     Fill edge IDs that are actually node IDs by propagating the last valid edge ID backward (from future to past)
-    within each vehicle's trajectory."
+    within each vehicle's trajectory.
+    This ensures that any internal junction lanes (marked as nodes) are replaced with the last known valid edge ID.
     """
 
     lf = lf.with_columns(
