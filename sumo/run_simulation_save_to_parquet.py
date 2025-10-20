@@ -13,6 +13,7 @@ import osmnx as ox
 import polars as pl
 
 from gloe import transformer, partial_transformer
+from gloe.experimental import bridge
 from gloe.utils import attach, forward
 from pyproj import Geod
 
@@ -26,6 +27,7 @@ SIMULATION_MAX_STEPS: int | None = None
 OUTPUT_PATH = BASE_PATH / "output"
 NOISE_METERS_STD: float = 5
 RANDOM_SEED = 42
+
 
 
 type Node = sumolib.net.node.Node
@@ -531,8 +533,8 @@ def generate_path_correction_rows(
 
 @transformer
 def combine_and_finalize_trajectories(
-    original_lf: pl.LazyFrame,
     new_rows_lf: pl.LazyFrame,
+    original_lf: pl.LazyFrame,
 ) -> pl.LazyFrame:
     """
     Combines the original 'good' trajectories with the newly generated correction rows.
@@ -708,16 +710,17 @@ def main() -> None:
         >> fill_edge_ids_backward
     )
 
+    pathway_bridge = bridge[pl.LazyFrame]("pathway_bridge")
+
     ensure_pathway_connection = (
         forward[pl.LazyFrame]()
-        >> (
-            forward[pl.LazyFrame](),
-            select_and_prepare_node_passages
-            >> attach(
-                identify_disconnected_pairs(G_road) >> find_connection_pathways(G_road)
-            )
-            >> generate_path_correction_rows,
+        >> pathway_bridge.pick()
+        >> select_and_prepare_node_passages
+        >> attach(
+            identify_disconnected_pairs(G_road) >> find_connection_pathways(G_road)
         )
+        >> generate_path_correction_rows
+        >> pathway_bridge.drop()
         >> combine_and_finalize_trajectories
     )
 
