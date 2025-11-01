@@ -106,6 +106,7 @@ def compute_stats_html(
     d_minus = L_real - L_intersection
     d_plus = L_calc - L_intersection
     error = (d_minus + d_plus) / L_real if L_real > 0 else 0
+    error_percent = error * 100
 
     stats = {
         "Matched": len(matched),
@@ -120,7 +121,7 @@ def compute_stats_html(
         "F1 Score": f"{f1:.3f}",
         "d- (m)": f"{d_minus:.1f}",
         "d+ (m)": f"{d_plus:.1f}",
-        "Error": f"{error:.3f}",
+        "Error": f"{error_percent:.3f}%",
     }
 
     stats_rows = "".join(
