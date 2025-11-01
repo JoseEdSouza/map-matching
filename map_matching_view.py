@@ -3,7 +3,6 @@ import folium
 import mmlib
 
 import geopandas as gpd
-import networkx as nx
 import osmnx as ox
 import pandas as pd
 import streamlit as st
@@ -153,12 +152,18 @@ def compute_stats_html(
     return stats_html
 
 
+@st.cache_resource
+def load_graph():
+    return ox.load_graphml(NETWORK_PATH)
+
+
 @st.cache_data
-def get_graph_gdfs(
-    _graph: nx.MultiDiGraph,
-) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
-    """Cache the conversion of graph to GeoDataFrames"""
-    nodes, edges = ox.graph_to_gdfs(_graph)
+def get_cached_gdfs() -> (
+    tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]
+):
+    """Cache GeoDataFrames do grafo"""
+    G = load_graph()
+    nodes, edges = ox.graph_to_gdfs(G)
     edges_wgs = edges.to_crs(epsg=4326)
     nodes_wgs = nodes.to_crs(epsg=4326)
     nodes_wgs["osmid"] = nodes_wgs.index.copy().astype(str)
@@ -166,7 +171,10 @@ def get_graph_gdfs(
 
 
 def plot_map_matching_from_osmid_folium(
-    graph: nx.MultiDiGraph,
+    _nodes: gpd.GeoDataFrame,  # underscore = não será hasheado
+    _edges: gpd.GeoDataFrame,
+    _nodes_wgs: gpd.GeoDataFrame,
+    _edges_wgs: gpd.GeoDataFrame,
     ground_truth_osmid_path: list[edge_id],
     map_matched_osmid_path: list[edge_id],
 ):
@@ -179,9 +187,7 @@ def plot_map_matching_from_osmid_folium(
     Includes tooltips, layer toggles and summary stats.
     """
 
-    nodes, edges, nodes_wgs, edges_wgs = get_graph_gdfs(graph)
-
-    center = edges_wgs.union_all().centroid
+    center = _edges_wgs.union_all().centroid
     m = folium.Map(
         location=[center.y, center.x],
         zoom_start=15,
@@ -215,7 +221,7 @@ def plot_map_matching_from_osmid_folium(
 
     # Simplificar a rede de ruas (remover tooltips pesados)
     folium.GeoJson(
-        edges_wgs,
+        _edges_wgs,
         name="Street Network",
         style_function=lambda x: {"color": "lightblue", "weight": 2, "opacity": 0.5},
         tooltip=folium.GeoJsonTooltip(fields=["osmid"], aliases=["OSMID"]),
@@ -224,7 +230,7 @@ def plot_map_matching_from_osmid_folium(
     # Remover nodes para melhorar performance (geralmente não são necessários)
     # Se precisar, descomente:
     folium.GeoJson(
-        nodes_wgs,
+        _nodes_wgs,
         name="Nodes",
         marker=folium.Circle(
             radius=2, color="gray", weight=0.5, fill=True, fill_opacity=0.3
@@ -235,8 +241,8 @@ def plot_map_matching_from_osmid_folium(
     def edges_by_osmid(osmid_list: list[edge_id]) -> pd.DataFrame:
         """Return subset of edges GeoDataFrame filtered by OSMIDs."""
         osmid_set = set(osmid_list)  # Usar set para busca O(1)
-        mask = edges_wgs["osmid"].astype(str).isin(osmid_set)
-        return edges_wgs[mask]
+        mask = _edges_wgs["osmid"].astype(str).isin(osmid_set)
+        return _edges_wgs[mask]
 
     if map_matched_osmid_path:
         mm_edges = edges_by_osmid(map_matched_osmid_path)
@@ -257,7 +263,7 @@ def plot_map_matching_from_osmid_folium(
         ).add_to(m)
 
     stats_html = compute_stats_html(
-        edges, ground_truth_osmid_path, map_matched_osmid_path
+        _edges, ground_truth_osmid_path, map_matched_osmid_path
     )
 
     root = m.get_root()
@@ -313,16 +319,63 @@ def get_vehicle_ids():
 
 vehicle_ids = get_vehicle_ids()
 
+# Inicializar session_state
+if "vehicle_id" not in st.session_state:
+    st.session_state.vehicle_id = vehicle_ids[0] if vehicle_ids else 0
+
 # Adicionar espaço antes do seletor
 st.write("")
 
-# Seletor no topo centralizado
-col1, col2, col3 = st.columns([1, 1, 1])
-with col2:
-    vehicle_id = cast(
-        int,
-        st.selectbox("🚗 Selecione o veículo:", vehicle_ids),
+# Seletor no topo com navegação
+left, middle, right = st.columns([1, 2, 1])
+
+vehicle_ids = get_vehicle_ids()
+
+# Inicializar session_state
+if "current_index" not in st.session_state:
+    st.session_state.current_index = 0
+
+# Garantir que está dentro dos limites
+if st.session_state.current_index >= len(vehicle_ids):
+    st.session_state.current_index = 0
+
+# Adicionar espaço antes do seletor
+st.write("")
+
+# Seletor no topo com navegação
+left, middle, right = st.columns([1, 2, 1])
+
+with left:
+    if st.button(
+        "⬅️ Anterior",
+        use_container_width=True,
+        disabled=(st.session_state.current_index == 0),
+    ):
+        st.session_state.current_index -= 1
+        st.rerun()
+
+with middle:
+    new_selection = st.selectbox(
+        "🚗 Selecione o veículo:",
+        vehicle_ids,
+        index=st.session_state.current_index,
     )
+    # Detectar mudança no selectbox
+    new_index = vehicle_ids.index(new_selection)
+    if new_index != st.session_state.current_index:
+        st.session_state.current_index = new_index
+
+with right:
+    if st.button(
+        "Próximo ➡️",
+        use_container_width=True,
+        disabled=(st.session_state.current_index == len(vehicle_ids) - 1),
+    ):
+        st.session_state.current_index += 1
+        st.rerun()
+
+# Usar o vehicle_id atual
+vehicle_id = cast(int, vehicle_ids[st.session_state.current_index])
 
 # --- Carregar dados com cache ---
 gt_df = load_road_dataset(GROUND_TRUTH_PATH, vehicle_id)
@@ -330,14 +383,6 @@ noisy_df = load_road_dataset(NOISE_PARQUET, vehicle_id, sample_rate=SAMPLE_RATE)
 
 gt_edges = df_to_edge_ids(gt_df)
 gps_points = df_to_gps_coordinates(noisy_df)
-
-
-@st.cache_resource
-def load_graph():
-    return ox.load_graphml(NETWORK_PATH)
-
-
-G = load_graph()
 
 
 matcher = mmlib.graphhopper_matcher(
@@ -352,10 +397,15 @@ def get_map_match_result(_matcher, vehicle_id: int):
     return _matcher.map_match(gps_points)
 
 
+nodes, edges, nodes_wgs, edges_wgs = get_cached_gdfs()
+
 match_result = get_map_match_result(matcher, vehicle_id)
 
 m = plot_map_matching_from_osmid_folium(
-    graph=G,
+    _nodes=nodes,
+    _edges=edges,
+    _nodes_wgs=nodes_wgs,
+    _edges_wgs=edges_wgs,
     ground_truth_osmid_path=gt_edges,
     map_matched_osmid_path=match_result.edge_ids,
 )
