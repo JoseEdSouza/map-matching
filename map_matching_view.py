@@ -69,6 +69,62 @@ def df_to_edge_ids(df: pd.DataFrame):
 
 type edge_id = str
 
+def compute_stats_html(
+    _graph: nx.MultiDiGraph,
+    ground_truth_osmid_path: list[edge_id],
+    map_matched_osmid_path: list[edge_id],
+):
+    
+    nodes, edges = ox.graph_to_gdfs(_graph)
+    edges_wgs = edges.to_crs(epsg=4326)
+
+
+
+    gt_edges = set(ground_truth_osmid_path)
+    mm_edges = set(map_matched_osmid_path)
+    matched = gt_edges & mm_edges
+    added = mm_edges - gt_edges
+    missing = gt_edges - mm_edges
+    difference = gt_edges ^ mm_edges
+
+    stats = {
+        "Matched": len(matched),
+        "Added": len(added),
+        "Missing": len(missing),
+        "Difference": len(difference),
+        "Ground Truth Edges": len(gt_edges),
+        "Map Matched Edges": len(mm_edges),
+    }
+
+    stats_rows = "".join(
+        f"""
+        <tr>
+            <td>{key}</td>
+            <td style="text-align:right;">{value}</td>
+        </tr>
+        <tr><td colspan="2"><hr style="margin:2px 0; border:none; border-top:1px solid #222;"></td></tr>
+        """
+        for key, value in stats.items()
+    )
+
+    stats_html = f"""
+    <div style="background-color:white; padding:10px; border-radius:8px;
+                box-shadow: 2px 2px 6px rgba(0,0,0,0.2); font-size:13px;
+                position: fixed; right: 10px; bottom: 25px; z-index: 9999;
+                width: 160px;">
+        <b>Map Matching Summary</b>
+        <table style="margin-top:5px; border-collapse:collapse;">
+            <tr>
+                <th style="text-align:left; padding-right:10px;">Metric</th>
+                <th style="text-align:right;">Count</th>
+            </tr>
+            {stats_rows}
+        </table>
+    </div>
+    """
+
+    return stats_html
+
 
 @st.cache_data
 def get_graph_gdfs(_graph: nx.MultiDiGraph):
@@ -132,6 +188,7 @@ def plot_map_matching_from_osmid_folium(
         edges_wgs,
         name="Street Network",
         style_function=lambda x: {"color": "lightblue", "weight": 2, "opacity": 0.5},
+        tooltip=folium.GeoJsonTooltip(fields=["osmid"], aliases=["OSMID"]),
     ).add_to(m)
 
     # Remover nodes para melhorar performance (geralmente não são necessários)
@@ -142,6 +199,7 @@ def plot_map_matching_from_osmid_folium(
         marker=folium.Circle(
             radius=2, color="gray", weight=0.5, fill=True, fill_opacity=0.3
         ),
+        tooltip=folium.GeoJsonTooltip(fields=["osmid"], aliases=["Node ID"]),
     ).add_to(m)
 
     def edges_by_osmid(osmid_list: list[edge_id]) -> pd.DataFrame:
@@ -156,6 +214,7 @@ def plot_map_matching_from_osmid_folium(
             mm_edges,
             name="Map Matched",
             style_function=lambda x: {"color": "blue", "weight": 4, "opacity": 0.6},
+            tooltip=folium.GeoJsonTooltip(fields=["osmid"], aliases=["OSMID"]),
         ).add_to(m)
 
     if ground_truth_osmid_path:
@@ -164,51 +223,13 @@ def plot_map_matching_from_osmid_folium(
             gt_edges,
             name="Ground Truth",
             style_function=lambda x: {"color": "green", "weight": 12, "opacity": 0.6},
+            tooltip=folium.GeoJsonTooltip(fields=["osmid"], aliases=["OSMID"]),
         ).add_to(m)
 
-    # --- Compute stats ---
-    gt_edges = set(ground_truth_osmid_path)
-    mm_edges = set(map_matched_osmid_path)
-    matched = gt_edges & mm_edges
-    added = mm_edges - gt_edges
-    missing = gt_edges - mm_edges
-    difference = gt_edges ^ mm_edges
 
-    stats = {
-        "Matched": len(matched),
-        "Added": len(added),
-        "Missing": len(missing),
-        "Difference": len(difference),
-        "Ground Truth Edges": len(gt_edges),
-        "Map Matched Edges": len(mm_edges),
-    }
-
-    stats_rows = "".join(
-        f"""
-        <tr>
-            <td>{key}</td>
-            <td style="text-align:right;">{value}</td>
-        </tr>
-        <tr><td colspan="2"><hr style="margin:2px 0; border:none; border-top:1px solid #222;"></td></tr>
-        """
-        for key, value in stats.items()
+    stats_html = compute_stats_html(
+        graph, ground_truth_osmid_path, map_matched_osmid_path
     )
-
-    stats_html = f"""
-    <div style="background-color:white; padding:10px; border-radius:8px;
-                box-shadow: 2px 2px 6px rgba(0,0,0,0.2); font-size:13px;
-                position: fixed; right: 10px; bottom: 25px; z-index: 9999;
-                width: 160px;">
-        <b>Map Matching Summary</b>
-        <table style="margin-top:5px; border-collapse:collapse;">
-            <tr>
-                <th style="text-align:left; padding-right:10px;">Metric</th>
-                <th style="text-align:right;">Count</th>
-            </tr>
-            {stats_rows}
-        </table>
-    </div>
-    """
 
     root = m.get_root()
     if isinstance(root, folium.Figure):
