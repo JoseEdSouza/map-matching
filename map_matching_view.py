@@ -163,7 +163,7 @@ def plot_map_matching_from_osmid_folium(
         folium.GeoJson(
             gt_edges,
             name="Ground Truth",
-            style_function=lambda x: {"color": "green", "weight": 10, "opacity": 0.6},
+            style_function=lambda x: {"color": "green", "weight": 12, "opacity": 0.6},
         ).add_to(m)
 
     # --- Compute stats ---
@@ -295,7 +295,6 @@ matcher = mmlib.graphhopper_matcher(
 )
 
 
-# Cache do map matching por veículo
 @st.cache_data
 def get_map_match_result(_matcher, vehicle_id: int):
     noisy_df = load_road_dataset(NOISE_PARQUET, vehicle_id, sample_rate=SAMPLE_RATE)
@@ -305,7 +304,6 @@ def get_map_match_result(_matcher, vehicle_id: int):
 
 match_result = get_map_match_result(matcher, vehicle_id)
 
-# --- plotar ---
 m = plot_map_matching_from_osmid_folium(
     graph=G,
     ground_truth_osmid_path=gt_edges,
