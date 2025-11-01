@@ -29,7 +29,6 @@ NOISE_METERS_STD: float = 5
 RANDOM_SEED = 42
 
 
-
 type Node = sumolib.net.node.Node
 type Edge = sumolib.net.edge.Edge
 type Net = sumolib.net.Net
@@ -400,9 +399,7 @@ def identify_disconnected_pairs(
     # Explodes the dataframe so each node of an edge gets its own row
     exploded_pairs = pairs_w_edges.explode("edges")
     exploded_pairs = exploded_pairs.with_columns(
-        pl.col("edges")
-        .list.contains(pl.col("node_osmid"))
-        .alias("connected")
+        pl.col("edges").list.contains(pl.col("node_osmid")).alias("connected")
         # it means one of the nodes of the edge is the node_osmid
     )
 

@@ -1,14 +1,16 @@
-from typing import cast
 import duckdb
+import folium
 import mmlib
 
-import folium
+import geopandas as gpd
 import networkx as nx
 import osmnx as ox
 import pandas as pd
 import streamlit as st
 
 from pathlib import Path
+from typing import cast
+
 from streamlit_folium import st_folium
 
 ROOT_PATH = Path(".").resolve().absolute()
@@ -69,23 +71,42 @@ def df_to_edge_ids(df: pd.DataFrame):
 
 type edge_id = str
 
+
 def compute_stats_html(
-    _graph: nx.MultiDiGraph,
+    edges_wgs: gpd.GeoDataFrame,
     ground_truth_osmid_path: list[edge_id],
     map_matched_osmid_path: list[edge_id],
-):
-    
-    nodes, edges = ox.graph_to_gdfs(_graph)
-    edges_wgs = edges.to_crs(epsg=4326)
-
-
-
+) -> str:
     gt_edges = set(ground_truth_osmid_path)
     mm_edges = set(map_matched_osmid_path)
     matched = gt_edges & mm_edges
     added = mm_edges - gt_edges
     missing = gt_edges - mm_edges
     difference = gt_edges ^ mm_edges
+
+    # ==== Métricas de Comprimento ====
+    def total_length(osmids: set[str]) -> float:
+        subset = edges_wgs[edges_wgs["osmid"].isin(map(int, osmids))]
+
+        if len(subset) == 0:
+            return 0.0
+
+        subset_utm = subset.to_crs(subset.estimate_utm_crs())
+        return subset_utm.length.sum()
+
+    L_real = total_length(gt_edges)
+    L_calc = total_length(mm_edges)
+    L_intersection = total_length(matched)
+
+    precision = L_intersection / L_calc if L_calc > 0 else 0
+    recall = L_intersection / L_real if L_real > 0 else 0
+    f1 = (
+        2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    )
+
+    d_minus = L_real - L_intersection
+    d_plus = L_calc - L_intersection
+    error = (d_minus + d_plus) / L_real if L_real > 0 else 0
 
     stats = {
         "Matched": len(matched),
@@ -94,6 +115,13 @@ def compute_stats_html(
         "Difference": len(difference),
         "Ground Truth Edges": len(gt_edges),
         "Map Matched Edges": len(mm_edges),
+        "<b>Length-based metrics</b>": "",
+        "Precision": f"{precision:.3f}",
+        "Recall": f"{recall:.3f}",
+        "F1 Score": f"{f1:.3f}",
+        "d- (m)": f"{d_minus:.1f}",
+        "d+ (m)": f"{d_plus:.1f}",
+        "Error": f"{error:.3f}",
     }
 
     stats_rows = "".join(
@@ -111,29 +139,31 @@ def compute_stats_html(
     <div style="background-color:white; padding:10px; border-radius:8px;
                 box-shadow: 2px 2px 6px rgba(0,0,0,0.2); font-size:13px;
                 position: fixed; right: 10px; bottom: 25px; z-index: 9999;
-                width: 160px;">
+                width: 200px;">
         <b>Map Matching Summary</b>
         <table style="margin-top:5px; border-collapse:collapse;">
             <tr>
                 <th style="text-align:left; padding-right:10px;">Metric</th>
-                <th style="text-align:right;">Count</th>
+                <th style="text-align:right;">Value</th>
             </tr>
-            {stats_rows}
+{stats_rows}
         </table>
     </div>
     """
-
     return stats_html
 
 
 @st.cache_data
-def get_graph_gdfs(_graph: nx.MultiDiGraph):
+def get_graph_gdfs(
+    _graph: nx.MultiDiGraph,
+) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
     """Cache the conversion of graph to GeoDataFrames"""
     nodes, edges = ox.graph_to_gdfs(_graph)
     edges_wgs = edges.to_crs(epsg=4326)
     nodes_wgs = nodes.to_crs(epsg=4326)
     nodes_wgs["osmid"] = nodes_wgs.index.copy().astype(str)
-    return nodes_wgs, edges_wgs
+    return nodes, edges, nodes_wgs, edges_wgs
+
 
 def plot_map_matching_from_osmid_folium(
     graph: nx.MultiDiGraph,
@@ -149,7 +179,7 @@ def plot_map_matching_from_osmid_folium(
     Includes tooltips, layer toggles and summary stats.
     """
 
-    nodes_wgs, edges_wgs = get_graph_gdfs(graph)
+    nodes, edges, nodes_wgs, edges_wgs = get_graph_gdfs(graph)
 
     center = edges_wgs.union_all().centroid
     m = folium.Map(
@@ -226,9 +256,8 @@ def plot_map_matching_from_osmid_folium(
             tooltip=folium.GeoJsonTooltip(fields=["osmid"], aliases=["OSMID"]),
         ).add_to(m)
 
-
     stats_html = compute_stats_html(
-        graph, ground_truth_osmid_path, map_matched_osmid_path
+        edges, ground_truth_osmid_path, map_matched_osmid_path
     )
 
     root = m.get_root()
