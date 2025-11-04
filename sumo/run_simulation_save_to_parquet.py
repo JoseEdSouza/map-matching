@@ -713,7 +713,7 @@ def write_parquet(df: pl.DataFrame, path: Path) -> pl.DataFrame:
 
 
 def main() -> None:
-    net = sumolib.net.readNet(SUMO_NETWORK_PATH, withInternal=True)
+    net: Net = sumolib.net.readNet(SUMO_NETWORK_PATH, withInternal=True)
     G_road = ox.load_graphml(ROAD_NETWORK_PATH)
 
     map_lanes_to_osmid = (
