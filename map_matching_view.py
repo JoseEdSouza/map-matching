@@ -20,10 +20,10 @@ SAMPLE_RATE: int | None = 2  # seconds
 
 GROUND_TRUTH_PATH = (
     ROOT_PATH
-    / "sumo/simulations/ohare-chicago-junctionless/output/fcd_resolved.parquet"
+    / "sumo/simulations/ohare-chicago-junctionless/output/fcd_resolved_2.parquet"
 )
 NOISE_PARQUET = (
-    ROOT_PATH / "sumo/simulations/ohare-chicago-junctionless/output/fcd_noisy.parquet"
+    ROOT_PATH / "sumo/simulations/ohare-chicago-junctionless/output/fcd_noisy_2.parquet"
 )
 NETWORK_PATH = ROOT_PATH / "networks/graphml/ohare_network.graphml"
 
