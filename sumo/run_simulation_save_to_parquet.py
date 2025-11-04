@@ -272,6 +272,8 @@ def fill_edge_ids_backward(lf: pl.LazyFrame) -> pl.LazyFrame:
     Fill edge IDs that are actually node IDs by propagating the last valid edge ID backward (from future to past)
     within each vehicle's trajectory.
     This ensures that any internal junction lanes (marked as nodes) are replaced with the last known valid edge ID.
+    As a fallback, it also fills forward to cover cases where the first few entries are nodes.
+    This solves when a trajectory starts or ends on a node lane and ensures continuity in edge IDs.
     """
 
     lf = lf.with_columns(
@@ -280,14 +282,30 @@ def fill_edge_ids_backward(lf: pl.LazyFrame) -> pl.LazyFrame:
         .otherwise(None)
         .alias("edge_id_valid")
     )
-
+    
+    # Marca linhas que têm ou terão edge_id válido
     lf = lf.with_columns(
-        pl.col("edge_id_valid").backward_fill().over("vehicle_id").alias("edge_id")
+        (pl.col("edge_id_valid").is_not_null().any().over("vehicle_id"))
+        .alias("has_valid_edges")
     )
-
-    lf = lf.drop("edge_id_valid")
-
+    
+    # Preenche bidirecional apenas para veículos com algum edge válido
+    lf = lf.with_columns(
+        pl.when(pl.col("has_valid_edges"))
+        .then(
+            pl.coalesce(
+                pl.col("edge_id_valid").backward_fill().over("vehicle_id"),
+                pl.col("edge_id_valid").forward_fill().over("vehicle_id")
+            )
+        )
+        .otherwise(None)
+        .alias("edge_id")
+    )
+    
+    lf = lf.drop("edge_id_valid", "has_valid_edges")
+    
     return lf
+
 
 
 @transformer
@@ -735,10 +753,12 @@ def main() -> None:
 
     lf_raw, lf_noisy, (incomplete_vehicles, lf_resolved) = pipeline()
 
+    print("Incomplete vehicle trajectories:", incomplete_vehicles.collect())
+
     for filename, lf in [
-        ("fcd_raw", lf_raw),
-        ("fcd_noisy", lf_noisy),
-        ("fcd_resolved", lf_resolved),
+        ("fcd_raw_2", lf_raw),
+        ("fcd_noisy_2", lf_noisy),
+        ("fcd_resolved_2", lf_resolved),
     ]:
         lf = remove_incomplete_vehicle_trajectories(lf, incomplete_vehicles)
         df = lf.collect()
