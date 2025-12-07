@@ -38,6 +38,3 @@ osm
 
 # all folders with repo in path
 **/repo/**
-
-# all sub repos
-**/.git/**
