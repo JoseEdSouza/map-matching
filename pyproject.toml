@@ -3,7 +3,7 @@ name = "map-matching"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12.3"
+requires-python = ">=3.13"
 dependencies = [
     "aiohttp>=3.12.13",
     "black>=25.9.0",
@@ -19,6 +19,7 @@ dependencies = [
     "ipykernel>=6.29.5",
     "kagglehub>=0.3.12",
     "matplotlib>=3.10.3",
+    "mmlib",
     "nbformat>=5.10.4",
     "notebook>=7.4.7",
     "numpy>=2.2.6",
@@ -56,3 +57,6 @@ project-excludes = [
     "**/__pycache__",
     "**/*venv/**/*",
 ]
+
+[tool.uv.sources]
+mmlib = { git = "https://github.com/JoseEdSouza/mmlib.git", rev = "dev" }
