@@ -35,3 +35,9 @@ osm
 
 # network files
 *.net.xml
+
+# all folders with repo in path
+**/repo/**
+
+# all sub repos
+**/.git/**
