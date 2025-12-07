@@ -303,8 +303,6 @@ def fill_edge_ids_backward(lf: pl.LazyFrame) -> pl.LazyFrame:
     )
     
     lf = lf.drop("edge_id_valid", "has_valid_edges")
-    
-    print(lf.collect()["edge_id"].is_null().sum(), "edge_id nulls after fill")
 
     return lf
 
@@ -436,8 +434,6 @@ def identify_disconnected_pairs(
         .drop("has_connection")
     )
 
-    print("Disconnected pairs found:", disconnected_pairs_lf.collect().height)
-
     return disconnected_pairs_lf
 
 
@@ -515,8 +511,6 @@ def generate_path_correction_rows(
         on=["next_edge_id", "node_osmid"],
         how="inner",
     )
-
-    print("Trajectories needing correction:", disconnected_trajectories_w_pathway.collect().height)
 
     newly_created_rows_lf = (
         disconnected_trajectories_w_pathway
@@ -656,8 +650,8 @@ def run_simulation(_, max_steps: int | None = None) -> pl.LazyFrame:
         (
             pl.Series(np.concatenate(vehicle_ids)).cast(pl.Int64).alias("vehicle_id"),
             pl.Series(np.concatenate(geo_positions))
-            .cast(pl.Array(pl.Float64, shape=2))
-            .alias("geo_position"),
+            .alias("geo_position")
+            .cast(pl.Array(pl.Float64, shape=2)),
             pl.Series(np.concatenate(times)).cast(pl.Float64).alias("time"),
             pl.Series(np.concatenate(lanes)).cast(pl.Categorical).alias("raw_lane_id"),
         )
