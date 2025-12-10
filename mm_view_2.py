@@ -615,6 +615,7 @@ def plot_map_matching_from_osmid_folium(
     _edges_wgs: gpd.GeoDataFrame,
     ground_truth_osmid_path: list[edge_id],
     map_matched_osmid_path: list[edge_id],
+    gps_points: list[tuple[float, float, object]] | None = None,
 ):
     """Folium version of map-matching visualization."""
     center = _edges_wgs.union_all().centroid
@@ -686,6 +687,20 @@ def plot_map_matching_from_osmid_folium(
             style_function=lambda x: {"color": "green", "weight": 12, "opacity": 0.6},
             tooltip=folium.GeoJsonTooltip(fields=["osmid"], aliases=["OSMID"]),
         ).add_to(m)
+
+    if gps_points:
+        gps_layer = folium.FeatureGroup(name="GPS Points", show=True)
+        for lat, lon, ts in gps_points:
+            folium.CircleMarker(
+                location=[float(lat), float(lon)],
+                radius=4,
+                color="#e74c3c",
+                weight=1,
+                fill=True,
+                fill_opacity=0.9,
+                tooltip=str(ts),
+            ).add_to(gps_layer)
+        gps_layer.add_to(m)
 
     stats_html = compute_stats_html(
         _edges, ground_truth_osmid_path, map_matched_osmid_path
@@ -795,10 +810,10 @@ matcher = mmlib.graphhopper_matcher(
 
 
 @st.cache_data
-def get_map_match_result(_matcher, vehicle_id: int):
+def get_map_match_result(_matcher: mmlib.BaseMatcher, vehicle_id: int):
     noisy_df = load_road_dataset(NOISE_PARQUET, vehicle_id, sample_rate=SAMPLE_RATE)
     gps_points = df_to_gps_coordinates(noisy_df)
-    return _matcher.map_match(gps_points)
+    return _matcher.match(gps_points)
 
 
 nodes, edges, nodes_wgs, edges_wgs = get_cached_gdfs()
@@ -812,6 +827,7 @@ m = plot_map_matching_from_osmid_folium(
     _edges_wgs=edges_wgs,
     ground_truth_osmid_path=gt_edges,
     map_matched_osmid_path=match_result.edge_ids,
+    gps_points=gps_points,
 )
 
 st_folium(m, width=None, height=1000, returned_objects=[])
