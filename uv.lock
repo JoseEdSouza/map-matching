@@ -1505,7 +1505,7 @@ requires-dist = [
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "kagglehub", specifier = ">=0.3.12" },
     { name = "matplotlib", specifier = ">=3.10.3" },
-    { name = "mmlib", git = "https://github.com/JoseEdSouza/mmlib.git?rev=dev" },
+    { name = "mmlib", git = "https://github.com/JoseEdSouza/mmlib.git?rev=refactor-barefoot-matcher" },
     { name = "nbformat", specifier = ">=5.10.4" },
     { name = "notebook", specifier = ">=7.4.7" },
     { name = "numpy", specifier = ">=2.2.6" },
@@ -1668,8 +1668,9 @@ wheels = [
 [[package]]
 name = "mmlib"
 version = "0.1.0"
-source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=dev#7bcd8470c970bfc20db5b5d11fdf24e8ae2b9d82" }
+source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=refactor-barefoot-matcher#814205a09bbc61b3cbde866a5838b0d2d9b37608" }
 dependencies = [
+    { name = "folium" },
     { name = "gpx" },
     { name = "networkx" },
     { name = "osmnx" },

@@ -59,4 +59,4 @@ project-excludes = [
 ]
 
 [tool.uv.sources]
-mmlib = { git = "https://github.com/JoseEdSouza/mmlib.git", rev = "dev" }
+mmlib = { git = "https://github.com/JoseEdSouza/mmlib.git", rev = "refactor-barefoot-matcher" }
