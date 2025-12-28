@@ -44,4 +44,4 @@ osrm-setup:
 .PHONY: barefoot-run
 barefoot-run:
 	@echo "Running Barefoot..."
-	@docker compose up barefoot-map-server barefoot-tracker-server barefoot-matcher-server
+	@docker compose up barefoot-map barefoot-tracker barefoot-matcher

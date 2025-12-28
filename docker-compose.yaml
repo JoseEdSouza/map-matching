@@ -36,8 +36,7 @@ services:
   # Map Server
   # Provides the PostGIS database with OpenStreetMap data.
   # ---------------------------------------------------------------------------
-  barefoot-map-server:
-    container_name: barefoot-map
+  barefoot-map:
     image: ghcr.io/joseedsouza/barefoot/barefoot-map:latest
     ports:
       - "5438:5432"
@@ -67,8 +66,7 @@ services:
   # Matcher Server
   # Performs map matching of GPS traces.
   # ---------------------------------------------------------------------------
-  barefoot-matcher-server:
-    container_name: barefoot-matcher
+  barefoot-matcher:
     image: ghcr.io/joseedsouza/barefoot/barefoot-matcher:latest
     ports:
       - "1234:1234"
@@ -80,13 +78,13 @@ services:
       # SERVER__MATCHER_RADIUS_MAX: 200
 
       # --- Map Database Configuration ---
-      MAP__DATABASE_HOST: barefoot-map-server
+      MAP__DATABASE_HOST: barefoot-map
       MAP__DATABASE_PORT: 5432
       MAP__DATABASE_NAME: osm
       MAP__DATABASE_USER: osm
       MAP__DATABASE_PASSWORD: osm
     depends_on:
-      barefoot-map-server:
+      barefoot-map:
         condition: service_healthy
     restart: unless-stopped
     networks:
@@ -96,8 +94,7 @@ services:
   # Tracker Server
   # Performs real-time map matching and state tracking.
   # ---------------------------------------------------------------------------
-  barefoot-tracker-server:
-    container_name: barefoot-tracker
+  barefoot-tracker:
     image: ghcr.io/joseedsouza/barefoot/barefoot-tracker:latest
     ports:
       - "1235:1234" # Tracker API
@@ -109,13 +106,13 @@ services:
       # SERVER__TRACKER_STATE_TTL: 60
       
       # --- Map Database Configuration ---
-      MAP__DATABASE_HOST: barefoot-map-server
+      MAP__DATABASE_HOST: barefoot-map
       MAP__DATABASE_PORT: 5432
       MAP__DATABASE_NAME: osm
       MAP__DATABASE_USER: osm
       MAP__DATABASE_PASSWORD: osm
     depends_on:
-      barefoot-map-server:
+      barefoot-map:
         condition: service_healthy
     restart: unless-stopped
     networks:
