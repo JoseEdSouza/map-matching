@@ -1672,7 +1672,7 @@ wheels = [
 [[package]]
 name = "mmlib"
 version = "0.1.0"
-source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=refactor-barefoot-matcher#bfaa8c1080c7bb9853e6af4f2a6325ccd702a3c6" }
+source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=refactor-barefoot-matcher#3fa4cb0cb822715481e5037ab5d49f989e6155b3" }
 dependencies = [
     { name = "folium" },
     { name = "geopy" },
