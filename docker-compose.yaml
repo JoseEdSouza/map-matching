@@ -1,4 +1,8 @@
 services:
+  # ---------------------------------------------------------------------------
+  # GraphHopper Routing Engine
+  # Provides routing and map matching services using OpenStreetMap data.
+  # ---------------------------------------------------------------------------
   graphhopper:
     image: israelhikingmap/graphhopper:latest
     container_name: graphhopper
@@ -13,9 +17,15 @@ services:
       - ./tools/graphhopper/config:/config
     entrypoint: ["./graphhopper.sh", "-c", "/config/config.yaml"]
 
+  # ---------------------------------------------------------------------------
+  # OSRM Routing Engine
+  # Provides routing and map matching services using OpenStreetMap data.
+  # ---------------------------------------------------------------------------
+
   osrm:
     image: ghcr.io/project-osrm/osrm-backend
-    container_name: osrm
+    networks:
+      - osrm-net
     ports:
       - "5000:5000"
     volumes:
@@ -31,7 +41,8 @@ services:
 
   osrm_frontend:
     image: osrm/osrm-frontend
-    container_name: osrm_frontend
+    networks:
+      - osrm-net
     ports:
       - "9966:9966"
     environment:
@@ -40,8 +51,11 @@ services:
       - osrm
 
   # ---------------------------------------------------------------------------
-  # Map Server
-  # Provides the PostGIS database with OpenStreetMap data.
+  # Barefoot
+  # Divided into three core components: Map Server, Matcher Server, and Tracker Server.
+  # Map Server is a postGIS database with preprocessed map data.
+  # Matcher Server performs map matching of GPS traces.
+  # Tracker Server performs real-time map matching and state tracking.
   # ---------------------------------------------------------------------------
   barefoot-map:
     image: ghcr.io/joseedsouza/barefoot/barefoot-map:latest
@@ -69,10 +83,6 @@ services:
     networks:
       - barefoot-net
 
-  # ---------------------------------------------------------------------------
-  # Matcher Server
-  # Performs map matching of GPS traces.
-  # ---------------------------------------------------------------------------
   barefoot-matcher:
     image: ghcr.io/joseedsouza/barefoot/barefoot-matcher:latest
     ports:
@@ -97,10 +107,6 @@ services:
     networks:
       - barefoot-net
 
-  # ---------------------------------------------------------------------------
-  # Tracker Server
-  # Performs real-time map matching and state tracking.
-  # ---------------------------------------------------------------------------
   barefoot-tracker:
     image: ghcr.io/joseedsouza/barefoot/barefoot-tracker:latest
     ports:
@@ -125,6 +131,22 @@ services:
     networks:
       - barefoot-net
 
+  graphium-neo4j:
+    image: ghcr.io/joseedsouza/graphium-neo4j:latest
+    container_name: mm-graphium-neo4j
+    environment:
+      - "NEO4J_dbms_memory_heap_max__size=4G"
+      - "NEO4J_AUTH=none"
+      - "GRAPHIUM_SERVER_NAME=graphium_neo4j"
+      - "GRAPHIUM_SERVER_URI=http://localhost:7474/graphium/api"
+      - "TZ=UTC"
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - graphium-db:/data
+      - ./networks/pbf/ohare-filtered.osm.pbf:/networks/network.osm.pbf:ro
+
 # -----------------------------------------------------------------------------
 # Volumes
 # -----------------------------------------------------------------------------
@@ -133,10 +155,14 @@ volumes:
     driver: local
   barefoot-db:
     driver: local
+  graphium-db:
+    driver: local
 
 # -----------------------------------------------------------------------------
 # Networks
 # -----------------------------------------------------------------------------
 networks:
   barefoot-net:
+    driver: bridge
+  osrm-net:
     driver: bridge
