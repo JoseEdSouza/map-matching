@@ -282,30 +282,30 @@ def fill_edge_ids_backward(lf: pl.LazyFrame) -> pl.LazyFrame:
         .otherwise(None)
         .alias("edge_id_valid")
     )
-    
+
     # if a row has any valid edge_id in the vehicle trajectory, mark it
     lf = lf.with_columns(
-        (pl.col("edge_id_valid").is_not_null().any().over("vehicle_id"))
-        .alias("has_valid_edges")
+        (pl.col("edge_id_valid").is_not_null().any().over("vehicle_id")).alias(
+            "has_valid_edges"
+        )
     )
-    
+
     # bidirectional fill: first backward fill, then forward fill as fallback
     lf = lf.with_columns(
         pl.when(pl.col("has_valid_edges"))
         .then(
             pl.coalesce(
                 pl.col("edge_id_valid").backward_fill().over("vehicle_id"),
-                pl.col("edge_id_valid").forward_fill().over("vehicle_id")
+                pl.col("edge_id_valid").forward_fill().over("vehicle_id"),
             )
         )
         .otherwise(None)
         .alias("edge_id")
     )
-    
+
     lf = lf.drop("edge_id_valid", "has_valid_edges")
 
     return lf
-
 
 
 @transformer
