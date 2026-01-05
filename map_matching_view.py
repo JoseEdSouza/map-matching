@@ -159,9 +159,9 @@ def load_graph():
 
 
 @st.cache_data
-def get_cached_gdfs() -> (
-    tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]
-):
+def get_cached_gdfs() -> tuple[
+    gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame
+]:
     """Cache GeoDataFrames do grafo"""
     G = load_graph()
     nodes, edges = ox.graph_to_gdfs(G)
