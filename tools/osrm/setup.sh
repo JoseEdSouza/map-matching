@@ -1,8 +1,7 @@
 #!/bin/sh
 
 NETWORK_DIR=networks/pbf
-OSM_FILENAME="newson_krumm_reconstructed"
-OSM_FILE="${OSM_FILENAME}.osm.pbf"
+OSM_FILE="ohare-filtered.osm.pbf"
 OSRM_DATA_DIR="tools/osrm/volumes/osrm_data"
 
 # NOVO: Diretório para o profile customizado
@@ -16,7 +15,7 @@ sudo mkdir -p ${OSRM_DATA_DIR}
 sudo mkdir -p ${PROFILE_DIR}  # Cria diretório para profiles
 sudo chmod -R a+rw ${PROFILE_DIR}
 
-sudo cp ${NETWORK_DIR}/${OSM_FILE} ${OSRM_DATA_DIR}/
+sudo cp ${NETWORK_DIR}/${OSM_FILE} ${OSRM_DATA_DIR}/network.osm.pbf
 
 set -e
 
@@ -25,21 +24,21 @@ docker run --rm -t \
     -v "$(pwd)/${OSRM_DATA_DIR}:/data" \
     -v "$(pwd)/${PROFILE_DIR}:/profiles" \
     ghcr.io/project-osrm/osrm-backend \
-    osrm-extract -p /profiles/car_with_wayids.lua /data/${OSM_FILE}
+    osrm-extract -p /profiles/car_with_wayids.lua /data/network.osm.pbf
 
 sleep 3
 
 echo "Partitioning OSM data..."
 docker run --rm -t \
     -v "$(pwd)/${OSRM_DATA_DIR}:/data" \
-    ghcr.io/project-osrm/osrm-backend osrm-partition /data/${OSM_FILENAME}.osrm
+    ghcr.io/project-osrm/osrm-backend osrm-partition /data/network.osrm
 
 sleep 3
 
 echo "Customizing OSM data..."
 docker run --rm -t \
     -v "$(pwd)/${OSRM_DATA_DIR}:/data" \
-    ghcr.io/project-osrm/osrm-backend osrm-customize /data/${OSM_FILENAME}.osrm
+    ghcr.io/project-osrm/osrm-backend osrm-customize /data/network.osrm
 
 echo "OSRM data setup completed with way IDs enabled."
 sudo rm -rf $(pwd)/${OSRM_DATA_DIR}/${OSM_FILE}

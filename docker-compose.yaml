@@ -26,7 +26,7 @@ services:
         "--algorithm=mld",
         "--max-matching-size=100000",
         "--max-table-size=100000",
-        "/data/newson_krumm_reconstructed.osrm",
+        "/data/network.osrm",
       ]
 
   osrm_frontend:
