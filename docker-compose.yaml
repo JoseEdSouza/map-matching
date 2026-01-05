@@ -11,7 +11,7 @@ services:
     volumes:
       - ./tools/graphhopper/volumes/graphhopper_data:/data
       - ./tools/graphhopper/config:/config
-    entrypoint:  ["./graphhopper.sh", "-c", "/config/config.yaml"]
+    entrypoint: ["./graphhopper.sh", "-c", "/config/config.yaml"]
 
   osrm:
     image: ghcr.io/project-osrm/osrm-backend
@@ -20,8 +20,15 @@ services:
       - "5000:5000"
     volumes:
       - ./tools/osrm/volumes/osrm_data:/data
-    command: ["osrm-routed","--algorithm=mld", "/data/newson_krumm_reconstructed.osrm"]
-  
+    command:
+      [
+        "osrm-routed",
+        "--algorithm=mld",
+        "--max-matching-size=100000",
+        "--max-table-size=100000",
+        "/data/newson_krumm_reconstructed.osrm",
+      ]
+
   osrm_frontend:
     image: osrm/osrm-frontend
     container_name: osrm_frontend
@@ -31,7 +38,7 @@ services:
       - OSRM_BACKEND_URL=http://osrm:5000
     depends_on:
       - osrm
-  
+
   # ---------------------------------------------------------------------------
   # Map Server
   # Provides the PostGIS database with OpenStreetMap data.
@@ -54,7 +61,7 @@ services:
       - barefoot-map:/mnt/map
       - barefoot-db:/var/lib/postgresql/9.3/main
     healthcheck:
-      test: [ "CMD-SHELL", "su - postgres -c 'pg_isready'" ]
+      test: ["CMD-SHELL", "su - postgres -c 'pg_isready'"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -104,7 +111,7 @@ services:
       # SERVER__SERVER_PORT: 1234
       # SERVER__TRACKER_PORT: 1235
       # SERVER__TRACKER_STATE_TTL: 60
-      
+
       # --- Map Database Configuration ---
       MAP__DATABASE_HOST: barefoot-map
       MAP__DATABASE_PORT: 5432

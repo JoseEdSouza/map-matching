@@ -1,42 +1,45 @@
 #!/bin/sh
 
-# https://github.com/Project-OSRM/osrm-backend
-
 NETWORK_DIR=networks/pbf
 OSM_FILENAME="newson_krumm_reconstructed"
-
-
 OSM_FILE="${OSM_FILENAME}.osm.pbf"
-ORSM_DATA_DIR="tools/osrm/volumes/osrm_data"
+OSRM_DATA_DIR="tools/osrm/volumes/osrm_data"
 
+# NOVO: Diretório para o profile customizado
+PROFILE_DIR="tools/osrm/config"
+CUSTOM_PROFILE="${PROFILE_DIR}/car_with_wayids.lua"
 
 sudo mkdir -p ${NETWORK_DIR}
 sudo chmod -R a+rw ${NETWORK_DIR}
 
-sudo mkdir -p ${ORSM_DATA_DIR}
-sudo cp ${NETWORK_DIR}/${OSM_FILE} ${ORSM_DATA_DIR}/
+sudo mkdir -p ${OSRM_DATA_DIR}
+sudo mkdir -p ${PROFILE_DIR}  # Cria diretório para profiles
+sudo chmod -R a+rw ${PROFILE_DIR}
 
-set -e # Exit on error
+sudo cp ${NETWORK_DIR}/${OSM_FILE} ${OSRM_DATA_DIR}/
 
-echo "Extracting OSM data to orsm format..."
+set -e
+
+echo "Extracting OSM data with custom profile..."
 docker run --rm -t \
-    -v "$(pwd)/${ORSM_DATA_DIR}:/data" \
-     ghcr.io/project-osrm/osrm-backend \
-     osrm-extract -p /opt/car.lua /data/${OSM_FILE} || echo "osrm-extract failed"
+    -v "$(pwd)/${OSRM_DATA_DIR}:/data" \
+    -v "$(pwd)/${PROFILE_DIR}:/profiles" \
+    ghcr.io/project-osrm/osrm-backend \
+    osrm-extract -p /profiles/car_with_wayids.lua /data/${OSM_FILE}
 
 sleep 3
 
-echo "Partitioning OSM data for routing..."
+echo "Partitioning OSM data..."
 docker run --rm -t \
-    -v "$(pwd)/${ORSM_DATA_DIR}:/data" \
-    ghcr.io/project-osrm/osrm-backend osrm-partition /data/${OSM_FILENAME}.osrm || echo "osrm-partition failed"
+    -v "$(pwd)/${OSRM_DATA_DIR}:/data" \
+    ghcr.io/project-osrm/osrm-backend osrm-partition /data/${OSM_FILENAME}.osrm
 
 sleep 3
 
-echo "Customizing OSM data for routing..."
+echo "Customizing OSM data..."
 docker run --rm -t \
-    -v "$(pwd)/${ORSM_DATA_DIR}:/data" \
-     ghcr.io/project-osrm/osrm-backend osrm-customize /data/${OSM_FILENAME}.osrm || echo "osrm-customize failed"
+    -v "$(pwd)/${OSRM_DATA_DIR}:/data" \
+    ghcr.io/project-osrm/osrm-backend osrm-customize /data/${OSM_FILENAME}.osrm
 
-echo "OSRM data setup completed."
-sudo rm -rf $(pwd)/${ORSM_DATA_DIR}/${OSM_FILE}
+echo "OSRM data setup completed with way IDs enabled."
+sudo rm -rf $(pwd)/${OSRM_DATA_DIR}/${OSM_FILE}
