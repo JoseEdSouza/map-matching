@@ -1461,6 +1461,7 @@ dependencies = [
     { name = "geopy" },
     { name = "gloe" },
     { name = "gpx" },
+    { name = "httpx" },
     { name = "igraph" },
     { name = "ipykernel" },
     { name = "kagglehub" },
@@ -1493,6 +1494,11 @@ dependencies = [
     { name = "zstd" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.12.13" },
@@ -1505,6 +1511,7 @@ requires-dist = [
     { name = "geopy", specifier = ">=2.4.1" },
     { name = "gloe", specifier = ">=0.7.0" },
     { name = "gpx", specifier = ">=0.2.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "igraph", specifier = ">=0.11.9" },
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "kagglehub", specifier = ">=0.3.12" },
@@ -1536,6 +1543,9 @@ requires-dist = [
     { name = "voila", specifier = ">=0.5.8" },
     { name = "zstd", specifier = ">=1.5.7.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.14.10" }]
 
 [[package]]
 name = "markupsafe"
@@ -1672,7 +1682,7 @@ wheels = [
 [[package]]
 name = "mmlib"
 version = "0.1.0"
-source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=refactor-barefoot-matcher#3fa4cb0cb822715481e5037ab5d49f989e6155b3" }
+source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=refactor-barefoot-matcher#230f158becdb3d7e6cee3bf31cb9f0681e90651c" }
 dependencies = [
     { name = "folium" },
     { name = "geopy" },

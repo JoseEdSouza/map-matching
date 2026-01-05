@@ -15,6 +15,7 @@ dependencies = [
     "geopy>=2.4.1",
     "gloe>=0.7.0",
     "gpx>=0.2.1",
+    "httpx>=0.28.1",
     "igraph>=0.11.9",
     "ipykernel>=6.29.5",
     "kagglehub>=0.3.12",
@@ -60,3 +61,8 @@ project-excludes = [
 
 [tool.uv.sources]
 mmlib = { git = "https://github.com/JoseEdSouza/mmlib.git", rev = "refactor-barefoot-matcher" }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.10",
+]
