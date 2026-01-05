@@ -6,8 +6,8 @@ mkdir -p ./networks/pbf
 chmod -R a+rw ./networks/xml
 chmod -R a+rw ./networks/pbf
 
-XML_FILEPATH="./networks/filtered/ohare-filtered.osm.xml"
-PBF_FILEPATH="./networks/pbf/ohare-filtered.osm.pbf"
+XML_FILEPATH="./networks/xml/newson_krumm_reconstructed.osm.xml"
+PBF_FILEPATH="./networks/pbf/newson_krumm_reconstructed.osm.pbf"
 
 # Executar Osmosis via Docker como se fosse binário
 # docker run --rm -it \
