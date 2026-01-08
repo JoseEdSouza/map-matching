@@ -36,7 +36,7 @@ class BenchmarkConfig:
     vehicle_ids: list[int]
 
     # Processing parameters
-    sample_rate: float | None = 1.0
+    sample_rates: list[float] = field(default_factory=lambda: [1.0])
     time_speed_factor: int = 1
 
     # Output configuration
@@ -474,6 +474,7 @@ class BenchmarkOrchestrator:
     async def run_vehicle_matcher_experiment(
         self,
         vehicle_id: int,
+        sample_rate: float,
         matcher_config: MatcherConfig,
         ground_truth_edges: list[str],
         noisy_gps: list[GPSPoint],
@@ -482,7 +483,7 @@ class BenchmarkOrchestrator:
     ) -> tuple[dict, pd.DataFrame, dict]:
         """Run experiment for a single vehicle with a specific matcher."""
 
-        dataset_id = f"ohare_filtered_vid_{vehicle_id}_sr_{self.config.sample_rate}"
+        dataset_id = f"ohare_filtered_vid_{vehicle_id}_sr_{sample_rate}"
 
         logger.info(
             "Running experiment: vehicle=%d, matcher=%s, service=%s, mode=%s",
@@ -555,7 +556,7 @@ class BenchmarkOrchestrator:
                 "dataset_id": dataset_id,
                 "experiment_id": experiment_id,
                 "vehicle_id": vehicle_id,
-                "sample_rate": self.config.sample_rate,
+                "sample_rate": sample_rate,
                 **matcher_config.metadata,
             },
         )
@@ -602,7 +603,7 @@ class BenchmarkOrchestrator:
         prom_conn,
         project_name: str,
     ) -> tuple[list[dict], list[pd.DataFrame], list[dict]]:
-        """Run experiments for a single vehicle across all matchers."""
+        """Run experiments for a single vehicle across all matchers and sample rates."""
 
         logger.info("=" * 80)
         logger.info("Starting experiments for VEHICLE_ID: %d", vehicle_id)
@@ -614,47 +615,62 @@ class BenchmarkOrchestrator:
         )
         _, _, gt_edge_ids = self.data_loader.prepare_data(gt_df)
 
-        # Load noisy data (shared across all matchers)
-        noisy_df = self.data_loader.load_trajectory(
-            self.config.noise_parquet_path, vehicle_id, self.config.sample_rate
-        )
-        noisy_data = self.data_loader.prepare_data(noisy_df)
-
-        # Run experiments for each matcher
         prom_summaries = []
         e2e_dfs = []
         mm_dicts = []
 
-        for i, matcher_config in enumerate(self.matchers, 1):
-            logger.info(
-                "Running matcher %d/%d: %s", i, len(self.matchers), matcher_config.name
+        for sample_rate in self.config.sample_rates:
+            logger.info("-" * 40)
+            logger.info("Testing SAMPLE_RATE: %.2fs", sample_rate)
+            logger.info("-" * 40)
+
+            # Load noisy data for specific sample rate
+            noisy_df = self.data_loader.load_trajectory(
+                self.config.noise_parquet_path, vehicle_id, sample_rate
             )
-            succeeded = False
-            while not succeeded:
-                try:
-                    prom_summary, e2e_df, mm_dict = await self.run_vehicle_matcher_experiment(
-                        vehicle_id,
-                        matcher_config,
-                        gt_edge_ids,
-                        noisy_data.gps_measurements,
-                        prom_conn,
-                        project_name,
-                    )
-                    prom_summaries.append(prom_summary)
-                    e2e_dfs.append(e2e_df)
-                    mm_dicts.append(mm_dict)
-                    succeeded = True
-                except Exception as e:
-                    logger.error(
-                        "Experiment failed for matcher %s on vehicle %d: %s",
-                        matcher_config.name,
-                        vehicle_id,
-                        str(e),
-                    )
-                    logger.info("Retrying experiment...")
-                    await asyncio.sleep(5)
-                
-        logger.info("Completed all matchers for vehicle %d", vehicle_id)
+            noisy_data = self.data_loader.prepare_data(noisy_df)
+
+            # Run experiments for each matcher
+            for i, matcher_config in enumerate(self.matchers, 1):
+                logger.info(
+                    "Running matcher %d/%d: %s (SR=%.2f)",
+                    i,
+                    len(self.matchers),
+                    matcher_config.name,
+                    sample_rate,
+                )
+                succeeded = False
+                while not succeeded:
+                    try:
+                        (
+                            prom_summary,
+                            e2e_df,
+                            mm_dict,
+                        ) = await self.run_vehicle_matcher_experiment(
+                            vehicle_id,
+                            sample_rate,
+                            matcher_config,
+                            gt_edge_ids,
+                            noisy_data.gps_measurements,
+                            prom_conn,
+                            project_name,
+                        )
+                        prom_summaries.append(prom_summary)
+                        e2e_dfs.append(e2e_df)
+                        mm_dicts.append(mm_dict)
+                        succeeded = True
+                    except Exception as e:
+                        logger.error(
+                            "Experiment failed for matcher %s (SR=%.2f) on vehicle %d: %s",
+                            matcher_config.name,
+                            sample_rate,
+                            vehicle_id,
+                            str(e),
+                        )
+                        logger.info("Retrying experiment...")
+                        await asyncio.sleep(5)
+
+        logger.info("Completed all matchers and sample rates for vehicle %d", vehicle_id)
         return prom_summaries, e2e_dfs, mm_dicts
 
     async def run_all_experiments(self):
@@ -666,7 +682,7 @@ class BenchmarkOrchestrator:
         logger.info("=" * 80)
         logger.info("Vehicles: %s", self.config.vehicle_ids)
         logger.info("Matchers: %s", [m.name for m in self.matchers])
-        logger.info("Sample rate: %s", self.config.sample_rate)
+        logger.info("Sample rates: %s", self.config.sample_rates)
         logger.info("Time speed factor: %d", self.config.time_speed_factor)
         logger.info("=" * 80)
 
@@ -729,7 +745,7 @@ async def main():
 
     # Configure benchmark
     ROOT_PATH = Path.cwd()
-    SAMPLE_RATE: float | None = 1
+    SAMPLE_RATES = [1.0, 5.0, 10.0]  # Lista de taxas de amostragem para testar
     VEHICLE_IDS = [5, 9, 13, 17]  # Lista de IDs para processar
     TIME_SPEED_FACTOR = 30
     SAVE_INDIVIDUAL_REPORTS = False  # individual reports
@@ -749,7 +765,7 @@ async def main():
         ground_truth_path=GROUND_TRUTH_PATH,
         noise_parquet_path=NOISE_PARQUET,
         network_path=NETWORK_PATH,
-        sample_rate=SAMPLE_RATE,
+        sample_rates=SAMPLE_RATES,
         vehicle_ids=VEHICLE_IDS,
         time_speed_factor=TIME_SPEED_FACTOR,
         save_individual_reports=SAVE_INDIVIDUAL_REPORTS,
