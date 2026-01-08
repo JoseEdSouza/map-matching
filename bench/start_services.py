@@ -59,7 +59,7 @@ def launch_service(
         project_name,
         "up",
         "-d",
-        "--force-recreate",
+        "--wait",
         *services,
         cwd=compose_cwd,
         env=env,

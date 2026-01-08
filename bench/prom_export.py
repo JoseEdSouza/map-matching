@@ -134,4 +134,8 @@ def export_prometheus_timeseries(
     key_cols = ["timestamp", "matcher_name", "mode", "dataset_id", "config", "experiment_id"]
     net_df = rx_df.merge(tx_df, on=key_cols, how="outer").sort_values("timestamp")
 
+    cpu_df = cpu_df.sort_values("timestamp")
+    mem_df = mem_df.sort_values("timestamp")
+    net_df = net_df.sort_values("timestamp")
+
     return cpu_df, mem_df, net_df

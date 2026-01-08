@@ -18,7 +18,7 @@ def track_metrics(
         project_name,
         "up",
         "-d",
-        "--force-recreate",
+        "--wait",
         "cadvisor",
         "prometheus",
         cwd=compose_cwd,
