@@ -1516,7 +1516,7 @@ requires-dist = [
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "kagglehub", specifier = ">=0.3.12" },
     { name = "matplotlib", specifier = ">=3.10.3" },
-    { name = "mmlib", git = "https://github.com/JoseEdSouza/mmlib.git?rev=refactor-barefoot-matcher" },
+    { name = "mmlib", git = "https://github.com/JoseEdSouza/mmlib.git?rev=feat-add-benchmark" },
     { name = "nbformat", specifier = ">=5.10.4" },
     { name = "notebook", specifier = ">=7.4.7" },
     { name = "numpy", specifier = ">=2.2.6" },
@@ -1682,7 +1682,7 @@ wheels = [
 [[package]]
 name = "mmlib"
 version = "0.1.0"
-source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=refactor-barefoot-matcher#7e674da8b1f328eb73cd4d9a5f91ef98b48b154f" }
+source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=feat-add-benchmark#11882da5e935f4f42a20f77875d48cb2b78c080e" }
 dependencies = [
     { name = "folium" },
     { name = "geopy" },
@@ -1693,6 +1693,7 @@ dependencies = [
     { name = "pandas" },
     { name = "plotly" },
     { name = "polyline" },
+    { name = "psutil" },
     { name = "pyzmq" },
     { name = "requests" },
     { name = "scipy" },

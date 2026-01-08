@@ -48,9 +48,6 @@ dependencies = [
     "zstd>=1.5.7.0",
 ]
 
-[tool.setuptools]
-packages = ["mmlib", "mmlib.graphhopper"]
-
 [tool.pyrefly]
 project-includes = ["**/*"]
 project-excludes = [
@@ -60,7 +57,7 @@ project-excludes = [
 ]
 
 [tool.uv.sources]
-mmlib = { git = "https://github.com/JoseEdSouza/mmlib.git", rev = "refactor-barefoot-matcher" }
+mmlib = { git = "https://github.com/JoseEdSouza/mmlib.git", rev = "feat-add-benchmark" }
 
 [dependency-groups]
 dev = [
