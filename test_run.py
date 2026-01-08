@@ -468,7 +468,7 @@ class BenchmarkOrchestrator:
         self.runner = ExperimentRunner(config)
         self.output_mgr = OutputManager(
             config.root_path / "metrics" / "ohare_filtered" / str(bench_id),
-            config.root_path / "results" / "ohare_filtered" / str(bench_id),
+            config.root_path / "metrics" / "ohare_filtered" / str(bench_id) / "partial",
         )
 
         self.graph = ox.load_graphml(config.network_path)
