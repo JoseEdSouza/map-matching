@@ -202,10 +202,16 @@ def join_metrics(
     # distribution stats
     e2e_stats = e2e.groupby(run_key, as_index=False).agg(
         e2e_avg_step_latency_ms=("step_latency_ms", "mean"),
+        e2e_p50_step_latency_ms=("step_latency_ms", lambda s: s.quantile(0.50)),
+        e2e_p75_step_latency_ms=("step_latency_ms", lambda s: s.quantile(0.75)),
+        e2e_p99_step_latency_ms=("step_latency_ms", lambda s: s.quantile(0.99)),
         e2e_p95_step_latency_ms=("step_latency_ms", lambda s: s.quantile(0.95)),
         e2e_max_step_latency_ms=("step_latency_ms", "max"),
         e2e_avg_inter_arrival_ms=("inter_arrival_ms", "mean"),
+        e2e_p50_inter_arrival_ms=("inter_arrival_ms", lambda s: s.quantile(0.50)),
+        e2e_p75_inter_arrival_ms=("inter_arrival_ms", lambda s: s.quantile(0.75)),
         e2e_p95_inter_arrival_ms=("inter_arrival_ms", lambda s: s.quantile(0.95)),
+        e2e_p99_inter_arrival_ms=("inter_arrival_ms", lambda s: s.quantile(0.99)),
         e2e_max_inter_arrival_ms=("inter_arrival_ms", "max"),
         e2e_avg_points_per_step=("points_per_step", "mean"),
         e2e_client_mem_peak_mb=("memory_mb", "max"),
@@ -221,7 +227,6 @@ def join_metrics(
     e2e_summary = e2e_id.merge(e2e_bounds, on=run_key, how="inner").merge(
         e2e_stats, on=run_key, how="inner"
     )
-    print(e2e_summary.columns, len(e2e_summary))
 
     # -----------------------------
     # Join: Prometheus + Match + E2E summary
