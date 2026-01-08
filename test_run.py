@@ -49,7 +49,7 @@ class MatcherConfig:
 
     matcher: BaseOnlineMatcher
     name: str
-    service_name: str  # Docker container service name to launch
+    services: str | list[str]  # Docker container service name to launch
     mode: str = "online_native"
     metadata: dict = field(default_factory=dict)
 
@@ -216,7 +216,7 @@ class ExperimentRunner:
                 final_result = result
                 metrics.append(partial_bench)
 
-                logger.info(
+                logger.debug(
                     "Received result: %d matched points, %d edges",
                     len(result.matched_points),
                     len(result.edge_ids),
@@ -465,7 +465,7 @@ class BenchmarkOrchestrator:
         self.data_loader = DataLoader()
         self.runner = ExperimentRunner(config)
         self.output_mgr = OutputManager(
-            config.root_path / "metrics", config.root_path / "results"
+            config.root_path / "metrics_new", config.root_path / "results_new"
         )
 
         self.graph = ox.load_graphml(config.network_path)
@@ -489,13 +489,13 @@ class BenchmarkOrchestrator:
             "Running experiment: vehicle=%d, matcher=%s, service=%s, mode=%s",
             vehicle_id,
             matcher_config.name,
-            matcher_config.service_name,
+            matcher_config.services,
             matcher_config.mode,
         )
 
         # Setup experiment context with matcher-specific service
         with launch_service(
-            matcher_config.service_name,  # Use service from matcher config
+            matcher_config.services,  # Use service from matcher config
             project_name,
             dataset_id=dataset_id,
             mode=matcher_config.mode,
@@ -639,8 +639,8 @@ class BenchmarkOrchestrator:
                     matcher_config.name,
                     sample_rate,
                 )
-                succeeded = False
-                while not succeeded:
+                remaining_attempts = 3
+                while remaining_attempts > 0:
                     try:
                         (
                             prom_summary,
@@ -658,7 +658,7 @@ class BenchmarkOrchestrator:
                         prom_summaries.append(prom_summary)
                         e2e_dfs.append(e2e_df)
                         mm_dicts.append(mm_dict)
-                        succeeded = True
+                        break  # Success, exit retry loop
                     except Exception as e:
                         logger.error(
                             "Experiment failed for matcher %s (SR=%.2f) on vehicle %d: %s",
@@ -667,10 +667,13 @@ class BenchmarkOrchestrator:
                             vehicle_id,
                             str(e),
                         )
+                        remaining_attempts -= 1
                         logger.info("Retrying experiment...")
                         await asyncio.sleep(5)
 
-        logger.info("Completed all matchers and sample rates for vehicle %d", vehicle_id)
+        logger.info(
+            "Completed all matchers and sample rates for vehicle %d", vehicle_id
+        )
         return prom_summaries, e2e_dfs, mm_dicts
 
     async def run_all_experiments(self):
@@ -739,16 +742,17 @@ class BenchmarkOrchestrator:
 # ============================================================================
 
 
-async def main():
-    """Example: Run benchmark with multiple matchers."""
-    from mmlib import graphium_online_matcher
+async def main() -> None:
+    """Run benchmark with multiple matchers (standardized naming + metadata)."""
 
-    # Configure benchmark
+    # -------------------------------------------------------------------------
+    # Benchmark config
+    # -------------------------------------------------------------------------
     ROOT_PATH = Path.cwd()
-    SAMPLE_RATES = [1.0, 5.0, 10.0]  # Lista de taxas de amostragem para testar
-    VEHICLE_IDS = [5, 9, 13, 17]  # Lista de IDs para processar
+    SAMPLE_RATES = [1.0, 5.0, 10.0]
+    VEHICLE_IDS = [5, 9, 13, 17]
     TIME_SPEED_FACTOR = 30
-    SAVE_INDIVIDUAL_REPORTS = False  # individual reports
+    SAVE_INDIVIDUAL_REPORTS = False
 
     GROUND_TRUTH_PATH = (
         ROOT_PATH
@@ -771,44 +775,142 @@ async def main():
         save_individual_reports=SAVE_INDIVIDUAL_REPORTS,
     )
 
-    # Prepare matchers - each with its own service container
-    matchers = [
-        MatcherConfig(
-            matcher=graphium_online_matcher(
-                base_url="http://localhost:7474/graphium/api",
-                graph_name="network",
-                batch_size=10,
-            ),
-            name="graphium_online_matcher_batch10",
-            service_name="graphium-neo4j",  # Container to launch for this matcher
-            mode="online_native",
-            metadata={"batch_size": 10},
-        ),
-        MatcherConfig(
-            matcher=graphium_online_matcher(
-                base_url="http://localhost:7474/graphium/api",
-                graph_name="network",
-                batch_size=20,
-            ),
-            name="graphium_online_matcher_batch20",
-            service_name="graphium-neo4j",  # Same service, different config
-            mode="online_native",
-            metadata={"batch_size": 20},
-        ),
-        MatcherConfig(
-            matcher=graphium_online_matcher(
-                base_url="http://localhost:7474/graphium/api",
-                graph_name="network",
-                batch_size=30,
-            ),
-            name="graphium_online_matcher_batch30",
-            service_name="graphium-neo4j",  # Same service, different config
-            mode="online_native",
-            metadata={"batch_size": 30},
-        ),
+    # -------------------------------------------------------------------------
+    # Matchers (standardized)
+    # - matcher_name: tool identity (graphium/osrm/graphhopper/barefoot)
+    # - mode: tool mode (online/offline)
+    # - metadata: adapter strategy + params (batch_size, gps_accuracy, etc.)
+    # -------------------------------------------------------------------------
+
+    GRAPHIUM_URL = "http://localhost:7474/graphium/api"
+    GRAPHIUM_GRAPH_NAME = "network"
+
+    def graphium_configs(*, batch_sizes: list[int]) -> list[MatcherConfig]:
+        from mmlib import graphium_online_matcher
+
+        matcher_name = "graphium"
+        mode = "online"  # tool is natively online
+
+        return [
+            MatcherConfig(
+                matcher=graphium_online_matcher(
+                    base_url=GRAPHIUM_URL,
+                    graph_name=GRAPHIUM_GRAPH_NAME,
+                    batch_size=batch_size,
+                ),
+                name=f"{matcher_name}__native__bs{batch_size}",
+                services="graphium-neo4j",
+                mode=mode,
+                metadata={
+                    "matcher_name": matcher_name,
+                    "adapter": "native",
+                    "batch_size": batch_size,
+                },
+            )
+            for batch_size in batch_sizes
+        ]
+
+    BAREFOOT_PUB_HOST = "localhost"
+    BAREFOOT_PUB_PORT = 1235
+    BAREFOOT_SUB_HOST = "localhost"
+    BAREFOOT_SUB_PORT = 1236
+
+    def barefoot_configs() -> list[MatcherConfig]:
+        from mmlib import barefoot_online_matcher
+
+        matcher_name = "barefoot"
+        mode = "online"  # tracker is natively online
+
+        return [
+            MatcherConfig(
+                matcher=barefoot_online_matcher(
+                    pub_host=BAREFOOT_PUB_HOST,
+                    pub_port=BAREFOOT_PUB_PORT,
+                    sub_host=BAREFOOT_SUB_HOST,
+                    sub_port=BAREFOOT_SUB_PORT,
+                ),
+                name=f"{matcher_name}__native",
+                services="barefoot-tracker",
+                mode=mode,
+                metadata={
+                    "matcher_name": matcher_name,
+                    "adapter": "native",
+                },
+            )
+        ]
+
+    GRAPHHOPPER_URL = "http://localhost:8989"
+    GRAPHHOPPER_GPS_ACCURACY = 50
+
+    def graphhopper_configs(*, batch_sizes: list[int]) -> list[MatcherConfig]:
+        from mmlib import graphhopper_matcher, batches_matcher
+
+        matcher_name = "graphhopper"
+        tool_mode = "offline"  # tool API is request/response; adapter simulates online
+
+        offline_matcher = graphhopper_matcher(
+            base_url=GRAPHHOPPER_URL,
+            gps_accuracy=GRAPHHOPPER_GPS_ACCURACY,
+        )
+
+        return [
+            MatcherConfig(
+                matcher=batches_matcher(offline_matcher, batch_size=batch_size),
+                name=f"{matcher_name}__batches__bs{batch_size}",
+                services="graphhopper",
+                mode=tool_mode,
+                metadata={
+                    "matcher_name": matcher_name,
+                    "adapter": "batches",
+                    "batch_size": batch_size,
+                    "gps_accuracy": GRAPHHOPPER_GPS_ACCURACY,
+                },
+            )
+            for batch_size in batch_sizes
+        ]
+
+    OSRM_URL = "http://localhost:5000"
+
+    def osrm_configs(*, batch_sizes: list[int]) -> list[MatcherConfig]:
+        from mmlib import osrm_matcher, batches_matcher
+
+        matcher_name = "osrm"
+        tool_mode = "offline"  # request/response; adapter simulates online
+
+        offline_matcher = osrm_matcher(
+            base_url=OSRM_URL,
+        )
+
+        return [
+            MatcherConfig(
+                matcher=batches_matcher(offline_matcher, batch_size=batch_size),
+                name=f"{matcher_name}__batches__bs{batch_size}",
+                services="osrm",
+                mode=tool_mode,
+                metadata={
+                    "matcher_name": matcher_name,
+                    "adapter": "batches",
+                    "batch_size": batch_size,
+                },
+            )
+            for batch_size in batch_sizes
+        ]
+
+    # -------------------------------------------------------------------------
+    # Build matcher list
+    # -------------------------------------------------------------------------
+    BATCH_SIZES = [10, 20, 30]  # recommended defaults
+
+    matchers: list[MatcherConfig] = [
+        *graphium_configs(batch_sizes=BATCH_SIZES),
+        *barefoot_configs(),
+        *graphhopper_configs(batch_sizes=BATCH_SIZES),
+        *osrm_configs(batch_sizes=BATCH_SIZES),
     ]
 
-    # Run benchmark
+    # -------------------------------------------------------------------------
+    # Run
+    # -------------------------------------------------------------------------
     orchestrator = BenchmarkOrchestrator(config, matchers)
     await orchestrator.run_all_experiments()
 
