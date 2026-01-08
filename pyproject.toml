@@ -30,6 +30,7 @@ dependencies = [
     "plotly>=6.1.2",
     "polars>=1.30.0",
     "polyline>=2.0.2",
+    "prometheus-api-client>=0.7.0",
     "pyarrow>=20.0.0",
     "pymove>=3.0.0",
     "pyrefly>=0.16.2",

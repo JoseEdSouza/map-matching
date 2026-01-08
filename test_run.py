@@ -162,7 +162,7 @@ async def main():
         for lat, lon, timestamp in noisy_gps_measurements
     ]
 
-    with track_metrics(project_name):
+    with track_metrics(project_name) as prom_conn:
         with launch_service(
             service_name,
             project_name,
@@ -180,51 +180,55 @@ async def main():
                 "Experiment %s completed. in %.2f seconds", experiment_id, t1 - t0
             )
 
-        logger.info("Experiment %s finished. Processing metrics...", experiment_id)
-
-        f_name = f"{matcher_name}_{mode}_{dataset_id}_{experiment_id}"
-
-        time_metrics = OnlineBenchMetrics.from_partials(
-            partial_metrics,
-            (t1 - t0) * 1000,
-            custom_metadata={
-                "matcher_name": matcher_name,
-                "mode": mode,
-                "dataset_id": dataset_id,
-                "experiment_id": experiment_id,
-            },
+        prom_conn.custom_query(
+            'container_cpu_usage_seconds_total'
         )
-        metrics_path = ROOT_PATH / "metrics"
-        metrics_path.mkdir(parents=True, exist_ok=True)
 
-        result_path = ROOT_PATH / "results"
-        result_path.mkdir(parents=True, exist_ok=True)
+    logger.info("Experiment %s finished. Processing metrics...", experiment_id)
 
-        time_metrics_df = time_metrics.to_df(expand_summary=True)
-        logger.info("Metrics DataFrame:\n%s", time_metrics_df.head())
+    f_name = f"{matcher_name}_{mode}_{dataset_id}_{experiment_id}"
 
-        time_metrics_df.to_csv(
-            metrics_path / f"{f_name}_metrics.csv",
-            index=False,
-        )
-        logger.info("Saved time metrics to %s", metrics_path)
+    time_metrics = OnlineBenchMetrics.from_partials(
+        partial_metrics,
+        (t1 - t0) * 1000,
+        custom_metadata={
+            "matcher_name": matcher_name,
+            "mode": mode,
+            "dataset_id": dataset_id,
+            "experiment_id": experiment_id,
+        },
+    )
+    metrics_path = ROOT_PATH / "metrics"
+    metrics_path.mkdir(parents=True, exist_ok=True)
 
-        result.to_df().to_csv(
-            result_path / f"{f_name}_result.csv",
-            index=False,
-        )
-        logger.info("Saved result to %s", result_path)
+    result_path = ROOT_PATH / "results"
+    result_path.mkdir(parents=True, exist_ok=True)
 
-        mm_metrics = result.calculate_metrics(
-            graph=G,
-            ground_truth_edge_ids=gt_edge_ids,
-        )
-        logger.info("Match Metrics: %s", mm_metrics)
+    time_metrics_df = time_metrics.to_df(expand_summary=True)
+    logger.info("Metrics DataFrame:\n%s", time_metrics_df.head())
 
-        with open(metrics_path / f"{f_name}_match_metrics.json", "w") as f:
-            f.write(json.dumps(mm_metrics.to_dict(), indent=2))
+    time_metrics_df.to_csv(
+        metrics_path / f"{f_name}_metrics.csv",
+        index=False,
+    )
+    logger.info("Saved time metrics to %s", metrics_path)
 
-        logger.info("Match metrics saved to %s", metrics_path)
+    result.to_df().to_csv(
+        result_path / f"{f_name}_result.csv",
+        index=False,
+    )
+    logger.info("Saved result to %s", result_path)
+
+    mm_metrics = result.calculate_metrics(
+        graph=G,
+        ground_truth_edge_ids=gt_edge_ids,
+    )
+    logger.info("Match Metrics: %s", mm_metrics)
+
+    with open(metrics_path / f"{f_name}_match_metrics.json", "w") as f:
+        f.write(json.dumps(mm_metrics.to_dict(), indent=2))
+
+    logger.info("Match metrics saved to %s", metrics_path)
 
 
 if __name__ == "__main__":
