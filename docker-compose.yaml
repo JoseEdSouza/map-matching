@@ -16,12 +16,18 @@ services:
       - ./tools/graphhopper/volumes/graphhopper_data:/data
       - ./tools/graphhopper/config:/config
     entrypoint: ["./graphhopper.sh", "-c", "/config/config.yaml"]
+    labels:
+      experiment_id: ${EXPERIMENT_ID:-None}
+      dataset_id: ${DATASET_ID:-None}
+      config: ${CONFIG:-None}
+      mode: ${MODE:-offline}
+      matcher_name: graphhopper
+      mmlib.monitor: "true"
 
   # ---------------------------------------------------------------------------
   # OSRM Routing Engine
   # Provides routing and map matching services using OpenStreetMap data.
   # ---------------------------------------------------------------------------
-
   osrm:
     image: ghcr.io/project-osrm/osrm-backend
     networks:
@@ -38,6 +44,13 @@ services:
         "--max-table-size=100000",
         "/data/network.osrm",
       ]
+    labels:
+      experiment_id: ${EXPERIMENT_ID:-None}
+      dataset_id: ${DATASET_ID:-None}
+      config: ${CONFIG:-None}
+      mode: ${MODE:-offline}
+      matcher_name: osrm
+      mmlib.monitor: "true"
 
   osrm_frontend:
     image: osrm/osrm-frontend
@@ -106,7 +119,17 @@ services:
     restart: unless-stopped
     networks:
       - barefoot-net
+    labels:
+      experiment_id: ${EXPERIMENT_ID:-None}
+      dataset_id: ${DATASET_ID:-None}
+      config: ${CONFIG:-None}
+      mode: ${MODE:-offline}
+      matcher_name: barefoot_matcher
+      mmlib.monitor: "true"
 
+  # ---------------------------------------------------------------------------
+  # Barefoot Tracker (online nativo)
+  # ---------------------------------------------------------------------------
   barefoot-tracker:
     image: ghcr.io/joseedsouza/barefoot/barefoot-tracker:latest
     ports:
@@ -130,7 +153,17 @@ services:
     restart: unless-stopped
     networks:
       - barefoot-net
+    labels:
+      experiment_id: ${EXPERIMENT_ID:-None}
+      dataset_id: ${DATASET_ID:-None}
+      config: ${CONFIG:-None}
+      mode: ${MODE:-online}
+      matcher_name: barefoot_tracker
+      mmlib.monitor: "true"
 
+  # ---------------------------------------------------------------------------
+  # Graphium
+  # ---------------------------------------------------------------------------
   graphium-neo4j:
     image: ghcr.io/joseedsouza/graphium-neo4j:latest
     container_name: mm-graphium-neo4j
@@ -146,6 +179,49 @@ services:
     volumes:
       - graphium-db:/data
       - ./networks/pbf/ohare-filtered.osm.pbf:/networks/network.osm.pbf:ro
+    labels:
+      experiment_id: ${EXPERIMENT_ID:-None}
+      dataset_id: ${DATASET_ID:-None}
+      config: ${CONFIG:-None}
+      mode: ${MODE:-offline}
+      matcher_name: graphium
+      mmlib.monitor: "true"
+
+  # ---------------------------------------------------------------------------
+  # Monitoring with cAdvisor and Prometheus
+  # ---------------------------------------------------------------------------
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.53.0
+    privileged: true
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/rootfs/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - "-housekeeping_interval=1s"
+      - "-docker_only=true"
+    networks:
+      - metrics-net
+
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+      - ./tools/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    restart: unless-stopped
+    networks:
+      - metrics-net
 
 # -----------------------------------------------------------------------------
 # Volumes
@@ -157,6 +233,8 @@ volumes:
     driver: local
   graphium-db:
     driver: local
+  prometheus-data:
+    driver: local
 
 # -----------------------------------------------------------------------------
 # Networks
@@ -165,4 +243,6 @@ networks:
   barefoot-net:
     driver: bridge
   osrm-net:
+    driver: bridge
+  metrics-net:
     driver: bridge
