@@ -460,12 +460,15 @@ class BenchmarkOrchestrator:
         if not matchers:
             raise ValueError("At least one matcher must be provided")
 
+        bench_id = int(time.time())
+
         self.config = config
         self.matchers = matchers
         self.data_loader = DataLoader()
         self.runner = ExperimentRunner(config)
         self.output_mgr = OutputManager(
-            config.root_path / "metrics_new", config.root_path / "results_new"
+            config.root_path / "metrics" / "ohare_filtered" / str(bench_id),
+            config.root_path / "results" / "ohare_filtered" / str(bench_id),
         )
 
         self.graph = ox.load_graphml(config.network_path)
