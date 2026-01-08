@@ -228,9 +228,7 @@ def join_metrics(
     # -----------------------------
     # Use inner join to ensure completeness; change to "left" if you want partial.
     runs = prom.merge(mm, on=run_key, how="inner", suffixes=("_prom", "_mm"))
-    print(runs.columns, len(runs))
     runs = runs.merge(e2e_summary, on=run_key, how="left", suffixes=("", "_e2e"))
-    print(runs.columns, len(runs))
     return runs
 
 
