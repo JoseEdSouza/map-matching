@@ -1,20 +1,22 @@
 import asyncio
 import json
 import logging
-from pathlib import Path
 import time
+
+from pathlib import Path
 
 import duckdb
 import osmnx as ox
 import pandas as pd
 
-from bench import launch_service, track_metrics
+from bench import launch_service, track_metrics, export_prometheus_timeseries
 from mmlib import graphium_online_matcher
 from mmlib.matcher.base import BaseOnlineMatcher
 from mmlib.result import OnlineMatchResult
 from mmlib.benchmark import OnlineBenchMetrics, PartialOnlineBenchMetrics
 
 from mmlib.types import GPSPoint
+from tqdm.asyncio import tqdm
 
 # Configure logging
 logging.basicConfig(
@@ -109,10 +111,9 @@ async def emit_gps(gps_points: list[GPSPoint], *, K: int = 1):
         return
 
     last_gps_ts = gps_points[0].time
-    for point in gps_points:
+    async for point in tqdm(gps_points, desc="Emitting GPS points"):
         sleep_time, last_gps_ts = point.time - last_gps_ts, point.time
-        logger.info("Emitting GPS point: %s", point.as_tuple)
-        await asyncio.sleep(sleep_time.seconds / K)
+        await asyncio.sleep(sleep_time.total_seconds() / K)
         yield point
 
 
@@ -173,20 +174,46 @@ async def main():
         ) as experiment_id:
             matcher.run_id = experiment_id
             logger.info("Running experiment %s with metrics tracking...", experiment_id)
+            wall_t0 = time.time()
             t0 = time.perf_counter()
             (result, partial_metrics) = await run_experiment(matcher, gps_points)
             t1 = time.perf_counter()
+            wall_t1 = time.time()
             logger.info(
                 "Experiment %s completed. in %.2f seconds", experiment_id, t1 - t0
             )
 
-        prom_conn.custom_query(
-            'container_cpu_usage_seconds_total'
+        cpu_df, mem_df, net_df = export_prometheus_timeseries(
+            prom_conn,
+            experiment_id=experiment_id,
+            start_ts=wall_t0 - 5,
+            end_ts=wall_t1 + 5,
+            step_s=1,  # combina com seu scrape_interval=1s
         )
 
     logger.info("Experiment %s finished. Processing metrics...", experiment_id)
 
     f_name = f"{matcher_name}_{mode}_{dataset_id}_{experiment_id}"
+
+    metrics_path = ROOT_PATH / "metrics"
+    metrics_path.mkdir(parents=True, exist_ok=True)
+
+    result_path = ROOT_PATH / "results"
+    result_path.mkdir(parents=True, exist_ok=True)
+
+    cpu_df.to_csv(metrics_path / f"{f_name}_prom_cpu.csv", index=False)
+    mem_df.to_csv(metrics_path / f"{f_name}_prom_mem.csv", index=False)
+    net_df.to_csv(metrics_path / f"{f_name}_prom_net.csv", index=False)
+
+    logger.info(
+        "Saved Prometheus CPU series to %s", metrics_path / f"{f_name}_prom_cpu.csv"
+    )
+    logger.info(
+        "Saved Prometheus MEM series to %s", metrics_path / f"{f_name}_prom_mem.csv"
+    )
+    logger.info(
+        "Saved Prometheus NET series to %s", metrics_path / f"{f_name}_prom_net.csv"
+    )
 
     time_metrics = OnlineBenchMetrics.from_partials(
         partial_metrics,
@@ -198,11 +225,6 @@ async def main():
             "experiment_id": experiment_id,
         },
     )
-    metrics_path = ROOT_PATH / "metrics"
-    metrics_path.mkdir(parents=True, exist_ok=True)
-
-    result_path = ROOT_PATH / "results"
-    result_path.mkdir(parents=True, exist_ok=True)
 
     time_metrics_df = time_metrics.to_df(expand_summary=True)
     logger.info("Metrics DataFrame:\n%s", time_metrics_df.head())
