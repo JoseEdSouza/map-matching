@@ -256,8 +256,8 @@ class PrometheusProcessor:
         if pd.isna(net_dt) or net_dt <= 0:
             net_dt = 1.0
 
-        rx_total_bytes = float((net_df["rx_bps"].fillna(0.0) * net_dt).sum())
-        tx_total_bytes = float((net_df["tx_bps"].fillna(0.0) * net_dt).sum())
+        rx_total_bytes = float((net_df["rx_bps"].fillna(0.0).to_numpy() * net_dt).sum())
+        tx_total_bytes = float((net_df["tx_bps"].fillna(0.0).to_numpy() * net_dt).sum())
 
         return {
             "duration_s": duration_s,
@@ -383,12 +383,12 @@ class MetricsAggregator:
 class OutputManager:
     """Manages saving experiment results and metrics."""
 
-    def __init__(self, metrics_path: Path, result_path: Path):
+    def __init__(self, metrics_path: Path, partial_path: Path):
         self.metrics_path = metrics_path
-        self.result_path = result_path
+        self.partial_path = partial_path
 
         metrics_path.mkdir(parents=True, exist_ok=True)
-        result_path.mkdir(parents=True, exist_ok=True)
+        partial_path.mkdir(parents=True, exist_ok=True)
 
     def save_individual_report(
         self,
@@ -400,12 +400,12 @@ class OutputManager:
         """Save individual experiment report."""
         cpu_df, mem_df, net_df = prom_metrics
 
-        cpu_df.to_csv(self.metrics_path / f"{filename_base}_prom_cpu.csv", index=False)
-        mem_df.to_csv(self.metrics_path / f"{filename_base}_prom_mem.csv", index=False)
-        net_df.to_csv(self.metrics_path / f"{filename_base}_prom_net.csv", index=False)
-        result_df.to_csv(self.result_path / f"{filename_base}_result.csv", index=False)
+        cpu_df.to_csv(self.partial_path / f"{filename_base}_prom_cpu.csv", index=False)
+        mem_df.to_csv(self.partial_path / f"{filename_base}_prom_mem.csv", index=False)
+        net_df.to_csv(self.partial_path / f"{filename_base}_prom_net.csv", index=False)
+        result_df.to_csv(self.partial_path / f"{filename_base}_result.csv", index=False)
 
-        with open(self.metrics_path / f"{filename_base}_match_metrics.json", "w") as f:
+        with open(self.partial_path / f"{filename_base}_match_metrics.json", "w") as f:
             json.dump(match_metrics, f, indent=2)
 
     def save_aggregated_metrics(
@@ -752,10 +752,31 @@ async def main() -> None:
     # Benchmark config
     # -------------------------------------------------------------------------
     ROOT_PATH = Path.cwd()
-    SAMPLE_RATES = [1.0, 5.0, 10.0]
-    VEHICLE_IDS = [5, 9, 13, 17]
+    SAMPLE_RATES = [1.0, 5.0, 20.0]
+    VEHICLE_IDS = [
+        1139,
+        1552,
+        749,
+        300,
+        1622,
+        384,
+        619,
+        803,
+        1077,
+        770,
+        1,
+        557,
+        349,
+        1356,
+        495,
+        479,
+        117,
+        736,
+        876,
+        1423,
+    ]
     TIME_SPEED_FACTOR = 30
-    SAVE_INDIVIDUAL_REPORTS = False
+    SAVE_INDIVIDUAL_REPORTS = True
 
     GROUND_TRUTH_PATH = (
         ROOT_PATH
@@ -902,7 +923,7 @@ async def main() -> None:
     # -------------------------------------------------------------------------
     # Build matcher list
     # -------------------------------------------------------------------------
-    BATCH_SIZES = [10, 20, 30]  # recommended defaults
+    BATCH_SIZES = [10, 30]  # recommended defaults
 
     matchers: list[MatcherConfig] = [
         *graphium_configs(batch_sizes=BATCH_SIZES),
