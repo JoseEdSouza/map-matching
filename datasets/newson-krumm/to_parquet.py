@@ -35,7 +35,6 @@ lf = lf.with_columns(
     ).alias("recorded_timestamp")
 ).select("recorded_timestamp", "lon", "lat")
 
-
 # Exportação para Parquet
 lf.collect(engine="streaming").write_parquet(
     DATA_BASE_PATH / "gps_data.parquet", compression="zstd"
@@ -51,6 +50,12 @@ lf = pl.scan_csv(
     low_memory=True,
     new_columns=["edge_id", "traversed"],
 )
+
+lf = lf.with_columns(
+    # Ajuste do edge_id para caber num int32
+    pl.col("edge_id").cast(pl.Int64) - 883000000000
+)
+
 
 lf.collect(engine="streaming").write_parquet(
     DATA_BASE_PATH / "ground_truth_route.parquet", compression="zstd"
@@ -75,5 +80,9 @@ df = df.rename(
     }
 )
 
+df = df.with_columns(
+    # Ajuste do edge_id para caber num int32
+    pl.col("edge_id").cast(pl.Int64) - 883000000000
+)
 
 df.write_parquet(DATA_BASE_PATH / "road_network.parquet", compression="zstd")
