@@ -12,7 +12,7 @@ from typing import cast
 
 from streamlit_folium import st_folium
 
-ROOT_PATH = Path(".").resolve().absolute()
+ROOT_PATH = Path(__file__).resolve().parent.parent
 GRAPHHOPPER_BASE_URL = "http://localhost:8989"
 GRAPHHOPPER_GPS_ACCURACY = 50  # meters
 SAMPLE_RATE: int | None = 2  # seconds
