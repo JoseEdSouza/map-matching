@@ -41,6 +41,7 @@ class BenchmarkConfig:
 
     # Output configuration
     save_individual_reports: bool = False
+    dataset_name: str = "ohare_filtered"
 
 
 @dataclass
@@ -467,8 +468,8 @@ class BenchmarkOrchestrator:
         self.data_loader = DataLoader()
         self.runner = ExperimentRunner(config)
         self.output_mgr = OutputManager(
-            config.root_path / "metrics" / "ohare_filtered" / str(bench_id),
-            config.root_path / "metrics" / "ohare_filtered" / str(bench_id) / "partial",
+            config.root_path / "metrics" / config.dataset_name / str(bench_id),
+            config.root_path / "metrics" / config.dataset_name / str(bench_id) / "partial",
         )
 
         self.graph = ox.load_graphml(config.network_path)
@@ -486,7 +487,7 @@ class BenchmarkOrchestrator:
     ) -> tuple[dict, pd.DataFrame, dict]:
         """Run experiment for a single vehicle with a specific matcher."""
 
-        dataset_id = f"ohare_filtered_vid_{vehicle_id}_sr_{sample_rate}"
+        dataset_id = f"{self.config.dataset_name}_vid_{vehicle_id}_sr_{sample_rate}"
 
         logger.info(
             "Running experiment: vehicle=%d, matcher=%s, service=%s, mode=%s",
@@ -797,6 +798,7 @@ async def main() -> None:
         vehicle_ids=VEHICLE_IDS,
         time_speed_factor=TIME_SPEED_FACTOR,
         save_individual_reports=SAVE_INDIVIDUAL_REPORTS,
+        dataset_name="ohare_filtered",
     )
 
     # -------------------------------------------------------------------------
