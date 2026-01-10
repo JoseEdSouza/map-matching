@@ -469,7 +469,11 @@ class BenchmarkOrchestrator:
         self.runner = ExperimentRunner(config)
         self.output_mgr = OutputManager(
             config.root_path / "metrics" / config.dataset_name / str(bench_id),
-            config.root_path / "metrics" / config.dataset_name / str(bench_id) / "partial",
+            config.root_path
+            / "metrics"
+            / config.dataset_name
+            / str(bench_id)
+            / "partial",
         )
 
         self.graph = ox.load_graphml(config.network_path)
@@ -698,16 +702,25 @@ class BenchmarkOrchestrator:
         all_match_metrics = []
 
         with track_metrics(project_name, startup_sleep_s=0) as prom_conn:
-            for vehicle_id in self.config.vehicle_ids:
-                prom_summaries, e2e_dfs, mm_dicts = await self.run_vehicle_experiments(
-                    vehicle_id,
-                    prom_conn,
-                    project_name,
-                )
+            try:
+                for vehicle_id in self.config.vehicle_ids:
+                    (
+                        prom_summaries,
+                        e2e_dfs,
+                        mm_dicts,
+                    ) = await self.run_vehicle_experiments(
+                        vehicle_id,
+                        prom_conn,
+                        project_name,
+                    )
 
-                all_prom_summaries.extend(prom_summaries)
-                all_e2e_metrics.extend(e2e_dfs)
-                all_match_metrics.extend(mm_dicts)
+                    all_prom_summaries.extend(prom_summaries)
+                    all_e2e_metrics.extend(e2e_dfs)
+                    all_match_metrics.extend(mm_dicts)
+            except KeyboardInterrupt:
+                logger.warning(
+                    "Benchmark interrupted by user. Proceeding to aggregate results..."
+                )
 
         # Save aggregated results
         if all_prom_summaries and all_e2e_metrics and all_match_metrics:
