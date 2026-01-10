@@ -40,6 +40,12 @@ osrm-run:
 	@echo "Running OSRM..."
 	@docker compose up osrm osrm_frontend
 
+## barefoot-setup: import map data for Barefoot
+.PHONY: barefoot-setup
+barefoot-setup:
+	@echo "Importing map data for Barefoot..."
+	@sudo sh ./tools/barefoot/setup.sh
+
 ## barefoot-run: start the Barefoot application
 .PHONY: barefoot-run
 barefoot-run:

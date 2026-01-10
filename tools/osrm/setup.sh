@@ -8,6 +8,8 @@ OSRM_DATA_DIR="tools/osrm/volumes/osrm_data"
 PROFILE_DIR="tools/osrm/config"
 CUSTOM_PROFILE="${PROFILE_DIR}/car_with_wayids.lua"
 
+rm -rf ./tools/osrm/volumes/osrm_data/*
+
 sudo mkdir -p ${NETWORK_DIR}
 sudo chmod -R a+rw ${NETWORK_DIR}
 
