@@ -766,7 +766,7 @@ async def main() -> None:
     # Benchmark config
     # -------------------------------------------------------------------------
     ROOT_PATH = Path.cwd()
-    SAMPLE_RATES = [1.0, 5.0, 20.0]
+    SAMPLE_RATES = [1.0, 5.0, 10.0, 20.0]
     VEHICLE_IDS = [
         1139,
         1552,
@@ -938,7 +938,7 @@ async def main() -> None:
     # -------------------------------------------------------------------------
     # Build matcher list
     # -------------------------------------------------------------------------
-    BATCH_SIZES = [10, 30]  # recommended defaults
+    BATCH_SIZES = [5, 10, 30]  # recommended defaults
 
     matchers: list[MatcherConfig] = [
         *graphium_configs(batch_sizes=BATCH_SIZES),
