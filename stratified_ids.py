@@ -41,6 +41,7 @@ def main():
         list(DISTINCT edge_id) as edge_ids
     FROM '{GROUND_TRUTH_PATH}'
     GROUP BY vehicle_id
+    ORDER BY vehicle_id
     """
     df_vehicles = duckdb.query(query).to_df()
 
