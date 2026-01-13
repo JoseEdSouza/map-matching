@@ -1699,7 +1699,7 @@ wheels = [
 [[package]]
 name = "mmlib"
 version = "0.1.0"
-source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=feat-add-benchmark#eab37a6a81d710e76e8ad6196d4138e2e9a2b7cf" }
+source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=feat-add-benchmark#8182a5665fc9f87a9c68fa1bc825622c52722f16" }
 dependencies = [
     { name = "folium" },
     { name = "geopy" },

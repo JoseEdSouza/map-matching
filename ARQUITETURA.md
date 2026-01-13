@@ -46,48 +46,71 @@ Coleta dados de desempenho do sistema durante a execução dos containers.
 O diagrama abaixo ilustra o ciclo de vida de um benchmark completo para um conjunto de veículos.
 
 ```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': {
+    'primaryColor': '#e1f5fe',
+    'primaryTextColor': '#000',
+    'primaryBorderColor': '#1168bd',
+    'lineColor': '#333',
+    'secondaryColor': '#f5f5f5',
+    'tertiaryColor': '#fff'
+} } }%%
+
 sequenceDiagram
-    participant User
-    participant Orch as BenchmarkOrchestrator
-    participant Stack as Metrics Stack (Prom/cAdvisor)
-    participant Runner as ExperimentRunner
-    participant Docker as Docker Compose
-    participant Matcher as Matcher Container
-    participant Out as OutputManager
+    autonumber
+    
+    %% Participantes com nomes em Português
+    participant User as 👤 Pesquisador
+    participant Orch as ⚙️ Benchmark<br/>Orchestrator
+    participant Stack as 📊 Stack de Métricas<br/>(Prom/cAdvisor)
+    participant Runner as 🏃 ExperimentRunner
+    participant Docker as 🐳 Docker Compose
+    participant Matcher as 🧩 Matcher Container
+    participant Out as 📁 OutputManager
+
+    Note over Orch, Runner: Framework Principal (Python)
+    Note over Stack, Docker: Serviços de Infraestrutura
+    Note over Matcher: Algoritmo Alvo
 
     User->>Orch: Iniciar Benchmark (run_all_experiments)
+    
     Orch->>Stack: track_metrics() (Inicia Prometheus)
     activate Stack
     
-    loop Para cada Veículo / Taxa de Amostragem / Matcher Config
+    rect rgb(240, 248, 255)
+    Note right of Orch: Loop: Para cada Veículo / Taxa de Amostragem / Configuração
+    
         Orch->>Docker: launch_service() (Inicia Matcher)
         activate Matcher
-        Docker-->>Orch: Experiment ID
+        Docker-->>Orch: ID do Experimento
         
         Orch->>Runner: run_single_experiment()
         activate Runner
+        
         Runner->>Runner: GPSStreamEmitter (Simula Stream)
-        loop Stream de Pontos GPS
-            Runner->>Matcher: Envia Ponto/Lote (Request)
-            Matcher-->>Runner: Resultado (Response)
+        
+        loop Fluxo de Pontos (Stream)
+            Runner->>Matcher: Envia Ponto/Lote (Requisição)
+            Matcher-->>Runner: Resultado do Matching (Resposta)
             Runner->>Runner: Registra Latência E2E
         end
-        Runner-->>Orch: Resultados do Matching & Métricas E2E
+        
+        Runner-->>Orch: Resultados do Matching e Métricas E2E
         deactivate Runner
 
-        Orch->>Docker: Stop Service
+        Orch->>Docker: Parar Serviço
         deactivate Matcher
         
         Orch->>Stack: export_prometheus_timeseries()
-        Stack-->>Orch: Métricas de CPU/Mem/Net
+        Stack-->>Orch: Métricas de CPU/RAM/Rede
         
         Orch->>Out: Salvar Relatório Individual
     end
-
-    Orch->>Stack: Stop Metrics Stack
+    
+    Orch->>Stack: Parar Stack de Métricas
     deactivate Stack
+    
     Orch->>Out: Salvar Métricas Agregadas
-    Orch-->>User: Fim da Execuçãp
+    Orch-->>User: Execução Finalizada
 ```
 
 ### Arquitetura de Componentes (Class Diagram)
@@ -95,7 +118,25 @@ sequenceDiagram
 Este diagrama mostra a relação entre as classes Python e os módulos do sistema.
 
 ```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': {
+    'primaryColor': '#ffffff',
+    'primaryBorderColor': '#1168bd',
+    'lineColor': '#333333',
+    'tertiaryColor': '#f4f4f4',
+    'fontFamily': 'arial'
+} } }%%
+
 classDiagram
+    direction TB
+
+    %% --- Styling ---
+    classDef core fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef infra fill:#f5f5f5,stroke:#9e9e9e,stroke-width:2px;
+    classDef storage fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef config fill:#ffffff,stroke:#333,stroke-dasharray: 5 5;
+
+    %% --- Hierarquia Vertical ---
+
     class BenchmarkOrchestrator {
         +BenchmarkConfig config
         +List~MatcherConfig~ matchers
@@ -105,21 +146,7 @@ classDiagram
         +run_all_experiments()
         +run_vehicle_matcher_experiment()
     }
-
-    class ExperimentRunner {
-        +run_single_experiment(matcher, gps_points)
-    }
-
-    class GPSStreamEmitter {
-        +emit()
-    }
-
-    class BenchModule {
-        <<Module>>
-        +launch_service() context
-        +track_metrics() context
-        +export_prometheus_timeseries()
-    }
+    class BenchmarkOrchestrator:::core
 
     class MatcherConfig {
         +BaseOnlineMatcher matcher
@@ -127,19 +154,63 @@ classDiagram
         +String services
         +String mode
     }
+    class MatcherConfig:::config
+
+    class DataLoader {
+        +load_trajectory()
+        +prepare_data()
+    }
+    class DataLoader:::core
+
+    class ExperimentRunner {
+        +run_single_experiment()
+    }
+    class ExperimentRunner:::core
+
+    class GPSStreamEmitter {
+        +emit()
+    }
+    class GPSStreamEmitter:::core
+
+    class BenchModule {
+        <<Module>>
+        +launch_service()
+        +track_metrics()
+        +export_metrics()
+    }
+    class BenchModule:::infra
+
+    class DockerCompose {
+        <<External>>
+        +up()
+        +down()
+    }
+    class DockerCompose:::infra
 
     class OutputManager {
         +save_individual_report()
         +save_aggregated_metrics()
     }
+    class OutputManager:::storage
 
-    BenchmarkOrchestrator --> ExperimentRunner : usa
-    BenchmarkOrchestrator --> BenchModule : usa para infraestrutura
-    BenchmarkOrchestrator --> OutputManager : usa para persistência
-    BenchmarkOrchestrator o-- MatcherConfig : contém lista de
-    ExperimentRunner --> GPSStreamEmitter : usa
-    ExperimentRunner ..> MatcherConfig : executa matcher definido em
-    BenchModule ..> DockerCompose : subprocess calls
+    %% --- Relationships (Ordenados para forçar verticalidade) ---
+    
+    BenchmarkOrchestrator o-- MatcherConfig : "possui"
+    BenchmarkOrchestrator --> DataLoader : "carrega dados"
+    
+    BenchmarkOrchestrator --> ExperimentRunner : "dispara"
+    ExperimentRunner --> GPSStreamEmitter : "gera stream"
+    ExperimentRunner ..> MatcherConfig : "consome"
+
+    BenchmarkOrchestrator --> BenchModule : "controla infra"
+    BenchModule ..> DockerCompose : "via subprocess"
+
+    BenchmarkOrchestrator --> OutputManager : "exporta"
+
+    %% --- Notas Estreitas ---
+    note for BenchmarkOrchestrator "Ponto de entrada.<br/>Lê as configs e<br/>gerencia o fluxo."
+    note for BenchModule "Lida com o ciclo de<br/>vida do Docker e<br/>coleta de métricas."
+    note for GPSStreamEmitter "Simula envio de<br/>dados em real-time."
 ```
 
 ### Fluxo de Dados de Métricas
@@ -147,29 +218,56 @@ classDiagram
 Como as métricas são coletadas de diferentes fontes e unificadas.
 
 ```mermaid
-graph LR
-    subgraph "Aplicação Python"
-        Runner[ExperimentRunner] -->|Latência, Throughput| E2E_Metrics[Métricas E2E]
-        MatcherResult[Resultado do Matching] -->|Acurácia, Erros| Match_Metrics[Métricas de Qualidade]
-    end
+%%{init: { 'theme': 'base', 'themeVariables': {
+    'primaryColor': '#ffffff',
+    'primaryBorderColor': '#1168bd',
+    'lineColor': '#333333',
+    'fontFamily': 'arial'
+} } }%%
 
-    subgraph "Infraestrutura Docker"
-        Container[Matcher Service]
-        cAdvisor[cAdvisor]
-        Prometheus[Prometheus]
+graph TD
+    %% --- Estilos ---
+    classDef app fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef infra fill:#f5f5f5,stroke:#9e9e9e,stroke-width:2px;
+    classDef result fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+
+    %% --- Nível 1: Coleta de Dados (Lado a Lado) ---
+    subgraph APP [🐍 Aplicação Python]
+        direction TB
+        Runner[ExperimentRunner]:::app
+        E2E_Metrics[Métricas E2E<br/>Latência/Throughput]:::app
+        MatcherResult[Resultado do Matching]:::app
+        Match_Metrics[Métricas de Qualidade<br/>Acurácia/Erros]:::app
         
-        Container -->|Uso de Recursos| cAdvisor
-        cAdvisor -->|Scrape| Prometheus
+        Runner ----> E2E_Metrics
+        MatcherResult ----> Match_Metrics
     end
 
-    Prometheus -->|Query Range API| PromExport[bench/prom_export.py]
-    PromExport -->|DataFrames| Sys_Metrics[Métricas de Sistema CPU/Mem]
+    subgraph INFRA [🐳 Infraestrutura Docker]
+        direction TB
+        Container[Matcher Service]:::infra
+        CADVISOR[cAdvisor]:::infra
+        PROM[Prometheus]:::infra
+        
+        Container -- "Uso de Recursos" ----> CADVISOR
+        CADVISOR -- "Scrape" ----> PROM
+    end
 
-    E2E_Metrics --> Aggregator[MetricsAggregator]
-    Match_Metrics --> Aggregator
-    Sys_Metrics --> Aggregator
+    %% --- Nível 2: Extração de Métricas de Sistema ---
+    PROM -- "Query Range API" ----> PromExport[bench/prom_export.py]:::app
+    PromExport -- "DataFrames" ----> Sys_Metrics[Métricas de Sistema<br/>CPU/Mem/Rede]:::app
 
-    Aggregator -->|Join por ExperimentID| FinalCSV[Relatórios Consolidados CSV]
+    %% --- Nível 3: Agregação e Join ---
+    E2E_Metrics ----> Aggregator{MetricsAggregator}:::app
+    Match_Metrics ----> Aggregator
+    Sys_Metrics ----> Aggregator
+
+    %% --- Nível 4: Saída ---
+    Aggregator -- "Join por ExperimentID" ----> FinalCSV[(Relatórios Consolidados CSV)]:::result
+
+    %% Ajuste de bordas dos subgráficos
+    style APP fill:none,stroke:#01579b,stroke-dasharray: 5 5
+    style INFRA fill:none,stroke:#9e9e9e,stroke-dasharray: 5 5
 ```
 
 ---
@@ -183,19 +281,28 @@ Abaixo apresentamos a arquitetura do sistema utilizando o modelo C4 (Context, Co
 O diagrama de contexto situa o Sistema de Benchmarking em relação aos usuários e sistemas externos.
 
 ```mermaid
-C4Context
-    title Diagrama de Contexto - Map Matching Benchmark Framework
+graph TD
+    %% Definição de Estilos C4
+    classDef person fill:#08427b,color:white,stroke:#052e56,stroke-width:2px;
+    classDef system fill:#1168bd,color:white,stroke:#0b4d8c,stroke-width:2px;
+    classDef external fill:#999999,color:white,stroke:#666666,stroke-width:2px;
 
-    Person(user, "Pesquisador / Desenvolvedor", "Configura e executa experimentos de benchmarking.")
+    %% Nós (Nodes)
+    USER["<b>Pesquisador / Desenvolvedor</b><br/>[Pessoa]<br/><br/>Configura e executa<br/>experimentos."]:::person
     
-    System(benchSystem, "Benchmark Framework", "Orquestra experimentos, simula dados GPS e coleta métricas.")
+    BENCH["<b>Benchmark Framework</b><br/>[Sistema Software]<br/><br/>Orquestra experimentos,<br/>simula dados e coleta métricas."]:::system
 
-    System_Ext(docker, "Docker Engine", "Gerencia a execução dos containers dos algoritmos e monitoramento.")
-    System_Ext(filesystem, "Sistema de Arquivos", "Armazena datasets (Parquet), redes (GraphML) e resultados.")
+    DOCKER["<b>Docker Engine</b><br/>[Sistema Externo]<br/><br/>Gerencia a execução<br/>dos containers."]:::external
 
-    Rel(user, benchSystem, "Configura e Inicia")
-    Rel(benchSystem, docker, "Gerencia ciclo de vida dos serviços")
-    Rel(benchSystem, filesystem, "Lê dados e grava relatórios")
+    FS["<b>Sistema de Arquivos</b><br/>[Sistema Externo]<br/><br/>Armazena datasets<br/>e resultados."]:::external
+
+    %% Relacionamentos com setas longas (----->) para dar espaço ao texto
+    USER -- "Inicia experimentos" -----> BENCH
+    BENCH -- "Gerencia ciclo de<br/>vida dos serviços" ----> DOCKER
+    BENCH -- "Lê dados e<br/>grava relatórios" ----> FS
+
+    %% Ajuste de layout lateral
+    direction TB
 ```
 
 ### Nível 2: Diagrama de Containers (Container Diagram)
@@ -203,24 +310,46 @@ C4Context
 Este nível detalha as aplicações e serviços executáveis que compõem o sistema.
 
 ```mermaid
-C4Container
-    title Diagrama de Containers - Map Matching Benchmark Framework
+graph TD
+    %% ==================================================
+    %% Definição de Estilos (C4 Palette)
+    %% ==================================================
+    classDef person fill:#08427b,color:white,stroke:#052e56,stroke-width:2px;
+    classDef container fill:#1168bd,color:white,stroke:#0b4d8c,stroke-width:2px;
+    %% ContainerDB usa a mesma cor, mas mudaremos a forma no nó
+    classDef containerDb fill:#1168bd,color:white,stroke:#0b4d8c,stroke-width:2px;
 
-    Person(user, "Pesquisador", "Inicia o script Python")
+    %% ==================================================
+    %% Nós (Nodes) com rótulos HTML
+    %% ==================================================
+    USER["<b>Pesquisador</b><br/>[Pessoa]<br/><br/>Inicia o script Python."]:::person
 
-    Container(app, "Python Orchestrator", "Python 3.10+", "Script de automação (ohare_run.py) e bibliotecas de suporte.")
-    
-    Container(matcher, "Matcher Service", "Docker Container", "Serviço do algoritmo de map-matching (ex: OSRM, Barefoot) exposto via HTTP/TCP.")
-    
-    Container(monitoring, "Observability Stack", "Prometheus + cAdvisor", "Coleta métricas de infraestrutura (CPU, RAM, Rede) dos containers.")
-    
-    ContainerDb(storage, "File Storage", "Disk", "Datasets de entrada e arquivos de saída (CSV/JSON).")
+    APP["<b>Python Orchestrator</b><br/>[Container: Python 3.10+]<br/><br/>Script de automação (ohare_run.py)<br/>e bibliotecas de suporte."]:::container
 
-    Rel(user, app, "Executa CLI")
-    Rel(app, matcher, "Envia Requests GPS / Recebe Matches", "HTTP/TCP")
-    Rel(app, monitoring, "Inicia serviços e Consulta Métricas", "Docker API / HTTP")
-    Rel(monitoring, matcher, "Scrapes metrics", "cAdvisor")
-    Rel(app, storage, "Lê/Escreve dados")
+    MATCHER["<b>Matcher Service</b><br/>[Container: Docker Image]<br/><br/>Serviço do algoritmo de map-matching<br/>exposto via HTTP/TCP."]:::container
+
+    MONITORING["<b>Observability Stack</b><br/>[Container: Prometheus + cAdvisor]<br/><br/>Coleta métricas de infraestrutura<br/>(CPU, RAM, Rede)."]:::container
+
+    %% Nota: O uso de [( e )] cria a forma de banco de dados/armazenamento
+    STORAGE[("<b>File Storage</b><br/>[Container Db: Disk]<br/><br/>Datasets de entrada e arquivos<br/>de saída (CSV/JSON).")]:::containerDb
+
+
+    %% ==================================================
+    %% Relacionamentos com setas longas (---->) e quebras de linha (<br/>)
+    %% ==================================================
+    
+    USER -- "Executa CLI" ----> APP
+    
+    %% Relações principais do OrchestratoR
+    %% Usei 5 traços (----->) para forçar mais espaço vertical aqui
+    APP -- "Envia Requests GPS /<br/>Recebe Matches<br/>[HTTP/TCP]" -----> MATCHER
+    
+    APP -- "Inicia serviços e<br/>Consulta Métricas<br/>[Docker API / HTTP]" -----> MONITORING
+    
+    APP -- "Lê/Escreve dados" -----> STORAGE
+    
+    %% Relação lateral entre containers
+    MONITORING -- "Scrapes metrics<br/>[cAdvisor]" ----> MATCHER
 ```
 
 ### Nível 3: Diagrama de Componentes (Component Diagram)

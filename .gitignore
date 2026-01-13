@@ -38,3 +38,6 @@ osm
 
 # all folders with repo in path
 **/repo/**
+
+# metrics
+/metrics/**/partial
