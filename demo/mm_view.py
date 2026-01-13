@@ -13,8 +13,7 @@ from typing import cast
 from streamlit_folium import st_folium
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
-GRAPHHOPPER_BASE_URL = "http://localhost:8989"
-GRAPHHOPPER_GPS_ACCURACY = 50  # meters
+OSRM_BASE_URL = "http://localhost:5000"
 SAMPLE_RATE: int | None = 2  # seconds
 
 
@@ -386,8 +385,8 @@ gt_edges = df_to_edge_ids(gt_df)
 gps_points = df_to_gps_coordinates(noisy_df)
 
 
-matcher = mmlib.graphhopper_matcher(
-    GRAPHHOPPER_BASE_URL, gps_accuracy=GRAPHHOPPER_GPS_ACCURACY
+matcher = mmlib.osrm_matcher(
+    OSRM_BASE_URL,
 )
 
 
@@ -395,7 +394,7 @@ matcher = mmlib.graphhopper_matcher(
 def get_map_match_result(_matcher, vehicle_id: int):
     noisy_df = load_road_dataset(NOISE_PARQUET, vehicle_id, sample_rate=SAMPLE_RATE)
     gps_points = df_to_gps_coordinates(noisy_df)
-    return _matcher.map_match(gps_points)
+    return _matcher.match(gps_points)
 
 
 nodes, edges, nodes_wgs, edges_wgs = get_cached_gdfs()
