@@ -375,3 +375,77 @@ C4Component
     Rel(orch, metricsLib, "Extrai métricas")
     Rel(orch, data, "Carrega dados")
 ```
+
+
+```mermaid
+flowchart TB
+  %% ====== BPMN-like styling ======
+  classDef event fill:#ffffff,stroke:#111111,stroke-width:2px;
+  classDef task fill:#f7f7f7,stroke:#111111,stroke-width:1px,rx:6,ry:6;
+  classDef gateway fill:#ffffff,stroke:#111111,stroke-width:2px;
+  classDef datastore fill:#ffffff,stroke:#111111,stroke-width:1px;
+  classDef artifact fill:#ffffff,stroke:#111111,stroke-dasharray: 5 5,rx:6,ry:6;
+
+  %% ====== Start and End ======
+  start((Início do processo)):::event
+  end_ok((Dataset finalizado)):::event
+
+  %% ====== Lane 1 ======
+  subgraph L1[Lane Aquisição e Preparação da Malha Viária]
+    direction TB
+    t1[Extrair rede viária com OSMnx<br/>Área O'Hare Chicago<br/>Tipo drive]:::task
+    d1[Rede viária bruta<br/>Formatos XML e GraphML]:::datastore
+    t2[Filtrar entidades highway com osmfilter]:::task
+    d2[Rede OSM filtrada]:::datastore
+    t3[Converter rede para SUMO com netconvert<br/>Preservar topologia e IDs OSM]:::task
+    a1[Artefato visual da rede no SUMO]:::artifact
+    d3[Rede viária pronta para simulação no SUMO]:::datastore
+  end
+
+  %% ====== Lane 2 ======
+  subgraph L2[Lane Geração de Viagens e Simulação]
+    direction TB
+    t4[Gerar viagens com randomTrips.py<br/>Seed 42<br/>Duração 1 hora<br/>Inserção a cada 2 segundos<br/>Distância mínima 500 metros]:::task
+    d4[Viagens e rotas geradas]:::datastore
+    t5[Executar simulação no SUMO<br/>Cálculo de rotas por menor caminho<br/>Passo temporal 0.5 segundos]:::task
+    t6[Coletar dados via TraCI<br/>Veículo tempo posição via]:::task
+    d5[Ground truth bruto<br/>Trajetória exata sobre a rede]:::datastore
+  end
+
+  %% ====== Lane 3 ======
+  subgraph L3[Lane Pós-processamento e Geração GNSS]
+    direction TB
+    t7[Reconstruir mapeamento entre vias SUMO e arestas OSM<br/>Tratar junções automáticas<br/>Reconectar lacunas com menor caminho]:::task
+    d6[Ground truth consistente<br/>Referenciado ao grafo OSM]:::datastore
+    t8[Gerar medições GNSS ruidosas<br/>Ruído gaussiano bidimensional<br/>Desvio padrão 5 metros]:::task
+    d7[Medições GNSS simuladas]:::datastore
+    t9[Persistir dados finais em formato Parquet]:::task
+    d8[Dataset final ground truth]:::datastore
+    d9[Dataset final GNSS ruidoso]:::datastore
+  end
+
+  %% ====== Lane 4 ======
+  subgraph L4[Lane Validação e Adequação ao Benchmark]
+    direction TB
+    t10[Validação preliminar<br/>Inspeção manual de amostra<br/>Comparação com GraphHopper]:::task
+    g1{Integridade topológica e viabilidade confirmadas}:::gateway
+    t11[Ajustar rede ou mapeamento<br/>Corrigir inconsistências detectadas]:::task
+    t12[Validação final no benchmark<br/>Avaliar heterogeneidade entre ferramentas]:::task
+    g2{Dataset expõe diferenças entre SUTs}:::gateway
+    t13[Ajustar parâmetros do dataset<br/>Geração ruído ou filtragem]:::task
+  end
+
+  %% ====== Fluxo principal ======
+  start --> t1 --> d1 --> t2 --> d2 --> t3 --> a1 --> d3
+  d3 --> t4 --> d4 --> t5 --> t6 --> d5
+  d5 --> t7 --> d6 --> t8 --> d7 --> t9 --> d8 --> end_ok
+  t9 --> d9 --> end_ok
+
+  %% ====== Loops de validação ======
+  t9 --> t10 --> g1
+  g1 -- Não --> t11 --> t7
+  g1 -- Sim --> t12 --> g2
+  g2 -- Não --> t13 --> t4
+  g2 -- Sim --> end_ok
+
+```
