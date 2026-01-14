@@ -1,0 +1,10 @@
+timestamp,mem_mb,matcher_name,mode,dataset_id,config,experiment_id
+1768187003.0,2.88671875,osrm,offline,ohare_filtered_vid_1552_sr_10.0,None,dea8664284204662afe9b1f60c78ef34
+1768187004.0,2.88671875,osrm,offline,ohare_filtered_vid_1552_sr_10.0,None,dea8664284204662afe9b1f60c78ef34
+1768187005.0,2.21875,osrm,offline,ohare_filtered_vid_1552_sr_10.0,None,dea8664284204662afe9b1f60c78ef34
+1768187006.0,2.21875,osrm,offline,ohare_filtered_vid_1552_sr_10.0,None,dea8664284204662afe9b1f60c78ef34
+1768187007.0,2.21875,osrm,offline,ohare_filtered_vid_1552_sr_10.0,None,dea8664284204662afe9b1f60c78ef34
+1768187008.0,2.21875,osrm,offline,ohare_filtered_vid_1552_sr_10.0,None,dea8664284204662afe9b1f60c78ef34
+1768187009.0,2.21875,osrm,offline,ohare_filtered_vid_1552_sr_10.0,None,dea8664284204662afe9b1f60c78ef34
+1768187010.0,2.21875,osrm,offline,ohare_filtered_vid_1552_sr_10.0,None,dea8664284204662afe9b1f60c78ef34
+1768187011.0,2.21875,osrm,offline,ohare_filtered_vid_1552_sr_10.0,None,dea8664284204662afe9b1f60c78ef34

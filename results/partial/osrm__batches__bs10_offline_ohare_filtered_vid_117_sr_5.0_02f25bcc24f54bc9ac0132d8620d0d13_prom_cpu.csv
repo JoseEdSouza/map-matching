@@ -1,0 +1,13 @@
+timestamp,cpu_cores,matcher_name,mode,dataset_id,config,experiment_id
+1768196724.0,0.0009262533998186764,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196725.0,0.0010684,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196726.0,0.0009921981533101048,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196727.0,0.0010422185006661966,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196728.0,0.0012477910376988792,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196729.0,0.0012142414152943094,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196730.0,0.0013845984999184737,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196731.0,0.0014546152616990054,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196732.0,0.0012842581770748408,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196733.0,0.0006710211133200794,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196734.0,0.0005935378945755435,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13
+1768196735.0,0.00048731662580447395,osrm,offline,ohare_filtered_vid_117_sr_5.0,None,02f25bcc24f54bc9ac0132d8620d0d13

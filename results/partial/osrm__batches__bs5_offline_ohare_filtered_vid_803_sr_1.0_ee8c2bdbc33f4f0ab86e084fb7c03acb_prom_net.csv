@@ -1,0 +1,15 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768190179.0,704.169249394673,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,1133.0226392251814
+1768190180.0,1093.7576271186442,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,1777.695762711864
+1768190181.0,2055.7681450404552,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,3259.9376086305065
+1768190182.0,2637.2490404154437,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,4293.830593813502
+1768190183.0,3187.711898848499,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,5196.7206367125755
+1768190184.0,3815.757093604551,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,6619.6213928633
+1768190185.0,4472.312022407355,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,7860.298305084745
+1768190186.0,4419.030000000001,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,7766.24
+1768190187.0,5632.830306099482,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,10241.872124690526
+1768190188.0,5473.129499585291,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,10120.299529997235
+1768190189.0,4129.75,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,8041.375
+1768190190.0,4065.671521895837,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,7916.60253874572
+1768190191.0,3527.886908234238,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,7029.925592700621
+1768190192.0,2947.248784440843,osrm,offline,ohare_filtered_vid_803_sr_1.0,None,ee8c2bdbc33f4f0ab86e084fb7c03acb,5796.849675850891

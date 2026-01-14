@@ -1,0 +1,17 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768191708.0,283.43980179764924,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,12.266374740723668
+1768191709.0,274.62050147492624,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,10.15344149459194
+1768191710.0,264.1355543780634,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,9.311214730427873
+1768191711.0,295.9410915353027,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,11.12730162935488
+1768191712.0,273.86791376753735,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,9.581384738222882
+1768191713.0,260.622558882708,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,4.971002485501243
+1768191714.0,83.48457350272233,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0
+1768191715.0,76.51152450090744,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0
+1768191716.0,57.60586704518571,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0
+1768191717.0,21.24,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0
+1768191718.0,20.55033089515848,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0
+1768191719.0,13.167599776723415,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0
+1768191720.0,14.11345830531271,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0
+1768191721.0,12.31453429724277,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0
+1768191722.0,0.0,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0
+1768191723.0,0.0,graphium,online,ohare_filtered_vid_770_sr_20.0,None,c1b720db3da946d9968578aafefbae6f,0.0

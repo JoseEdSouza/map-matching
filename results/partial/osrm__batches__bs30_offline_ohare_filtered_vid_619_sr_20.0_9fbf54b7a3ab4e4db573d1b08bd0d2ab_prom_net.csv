@@ -1,0 +1,17 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768190035.0,165.02949308755763,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,7.093548387096774
+1768190036.0,234.32672811059913,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,9.512903225806452
+1768190037.0,250.02176568573014,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,11.57740144364242
+1768190038.0,306.129483620211,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,13.909439200444195
+1768190039.0,300.86734342080064,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,11.156291898103811
+1768190040.0,283.2146003388264,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,10.188703218851069
+1768190041.0,320.19288464500227,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,11.48240412752195
+1768190042.0,292.11249999999995,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,10.660904050515938
+1768190043.0,181.87421343984303,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,6.376224511246583
+1768190044.0,149.87940737337775,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,4.823705064890318
+1768190045.0,61.87269724304409,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,0.0
+1768190046.0,61.87269724304409,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,0.0
+1768190047.0,14.463483685220732,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,0.0
+1768190048.0,12.752031349968009,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,0.0
+1768190049.0,14.296746987951808,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,0.0
+1768190050.0,0.0,osrm,offline,ohare_filtered_vid_619_sr_20.0,None,9fbf54b7a3ab4e4db573d1b08bd0d2ab,0.0

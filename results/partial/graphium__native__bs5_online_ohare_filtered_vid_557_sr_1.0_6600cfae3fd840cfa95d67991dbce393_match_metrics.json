@@ -1,0 +1,23 @@
+{
+  "run_id": "08912f86dd4d42e09bba3bd77bba86bf",
+  "precision": 0.9481922841866766,
+  "recall": 0.914034192741126,
+  "f1_score": 0.9307999642124452,
+  "error_rate": 0.06920003578755485,
+  "accuracy": 0.8705573635029237,
+  "newson_krumm_error": 0.135907179373931,
+  "matched_count": 23,
+  "added_count": 3,
+  "missing_count": 6,
+  "ground_truth_count": 29,
+  "total_gt_length": 1716.8171474325745,
+  "total_added_length": 85.74020401344085,
+  "total_missing_length": 147.58757199491856,
+  "vehicle_id": 557,
+  "experiment_id": "6600cfae3fd840cfa95d67991dbce393",
+  "dataset_id": "ohare_filtered_vid_557_sr_1.0",
+  "matcher_name": "graphium",
+  "mode": "online",
+  "adapter": "native",
+  "batch_size": 5
+}

@@ -1,0 +1,17 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768192509.0,51.31441152922338,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,7.043154523618895
+1768192510.0,75.81401120896717,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,10.405844675740592
+1768192511.0,214.9483775811209,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,12.847787610619468
+1768192512.0,244.78347718865598,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,10.659679408138102
+1768192513.0,247.5407866692501,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,9.952925789575662
+1768192514.0,288.77310598721175,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,11.580517341600466
+1768192515.0,289.2548055431381,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,10.190022351363433
+1768192516.0,276.97661738690925,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,9.690144048521608
+1768192517.0,276.18781273692184,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,9.662547384382105
+1768192518.0,254.93619654913726,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,5.110892723180795
+1768192519.0,121.78326124567474,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,0.0
+1768192520.0,104.6167868127643,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,0.0
+1768192521.0,50.093893063833455,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,0.0
+1768192522.0,40.97727025063567,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,0.0
+1768192523.0,0.0,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,0.0
+1768192524.0,0.0,osrm,offline,ohare_filtered_vid_1_sr_20.0,None,ebab0a8e443f46fcab37df98e608cbd2,0.0

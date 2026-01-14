@@ -42,3 +42,6 @@ osm
 # metrics
 /metrics/**/partial
 /metrics
+
+/old
+/zip
