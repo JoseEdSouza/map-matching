@@ -8,12 +8,11 @@ NUM_QUANTILES = 4
 SAMPLES_PER_QUANTILE = 5
 RANDOM_SEED = 42
 
-ROOT_PATH = Path.cwd()
+DATASET_PATH = Path.cwd() / "dataset"
 GROUND_TRUTH_PATH = (
-    ROOT_PATH
-    / "sumo/simulations/ohare-chicago-junctionless/output/teste/fcd_resolved_2.parquet"
+    DATASET_PATH / "ground_truth.parquet"
 )
-NETWORK_PATH = ROOT_PATH / "networks/graphml/ohare_network.graphml"
+NETWORK_PATH = DATASET_PATH / "ohare_network.graphml"
 
 
 def main():
