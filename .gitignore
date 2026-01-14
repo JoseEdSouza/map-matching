@@ -29,13 +29,6 @@ output
 graphhopper_data
 osrm_data
 
-# heavy osm files and road network files
-networks
-osm
-
-# network files
-*.net.xml
-
 # all folders with repo in path
 **/repo/**
 
