@@ -24,7 +24,7 @@ dependencies = [
     "mmlib",
     "nbformat>=5.10.4",
     "notebook>=7.4.7",
-    "numpy>=2.2.6",
+    "numpy>=2.4.0",
     "osmnx>=2.0.6",
     "pandas>=2.2.3",
     "pathos>=0.3.4",
@@ -59,7 +59,7 @@ project-excludes = [
 ]
 
 [tool.uv.sources]
-mmlib = { git = "https://github.com/JoseEdSouza/mmlib.git", rev = "feat-add-benchmark" }
+mmlib = { git = "https://github.com/JoseEdSouza/mmlib.git", rev = "main" }
 
 [dependency-groups]
 dev = [
