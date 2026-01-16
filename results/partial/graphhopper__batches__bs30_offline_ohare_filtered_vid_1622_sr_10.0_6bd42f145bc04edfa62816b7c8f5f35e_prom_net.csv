@@ -1,0 +1,16 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768188505.0,54.453968253968256,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,7.474074074074075
+1768188506.0,190.46435733819507,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,11.483956244302645
+1768188507.0,210.49999999999997,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,12.599999999999998
+1768188508.0,258.7229210526316,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,11.23905263157895
+1768188509.0,242.28494208494206,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,9.468532818532818
+1768188510.0,282.69678249678253,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,11.012934362934363
+1768188511.0,280.33719855595666,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,9.878036101083032
+1768188512.0,274.5348135139655,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,9.604716507777217
+1768188513.0,276.64306740257564,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,9.6784746613146
+1768188514.0,251.37548990933024,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,5.039508628253876
+1768188515.0,111.9456948771201,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,0.0
+1768188516.0,56.6204857782039,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,0.0
+1768188517.0,47.51214445509748,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,0.0
+1768188518.0,33.29304184761153,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,0.0
+1768188519.0,0.0,graphhopper,offline,ohare_filtered_vid_1622_sr_10.0,None,6bd42f145bc04edfa62816b7c8f5f35e,0.0

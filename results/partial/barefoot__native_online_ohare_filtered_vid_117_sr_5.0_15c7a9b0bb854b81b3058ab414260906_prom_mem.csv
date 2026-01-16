@@ -1,0 +1,14 @@
+timestamp,mem_mb,matcher_name,mode,dataset_id,config,experiment_id
+1768196657.0,2.203125,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196658.0,96.21875,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196659.0,96.21875,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196660.0,157.46875,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196661.0,209.11328125,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196662.0,209.11328125,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196663.0,217.0390625,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196664.0,217.0390625,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196665.0,219.7109375,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196666.0,219.7109375,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196667.0,219.4765625,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196668.0,219.4765625,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906
+1768196669.0,219.4765625,barefoot_tracker,online,ohare_filtered_vid_117_sr_5.0,None,15c7a9b0bb854b81b3058ab414260906

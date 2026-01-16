@@ -1,0 +1,17 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768188345.0,258.66499894000424,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,10.742039431842274
+1768188346.0,303.7784184863261,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,12.522832308670765
+1768188347.0,286.36173833763866,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,10.298807172162286
+1768188348.0,322.84555538671935,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,12.76401762650053
+1768188349.0,292.3307064583818,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,9.792492422476101
+1768188350.0,179.18189319816102,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,4.951078627843923
+1768188351.0,158.96256013386324,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,4.392386530014642
+1768188352.0,87.4081580947555,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,0.0
+1768188353.0,49.1336953710887,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,0.0
+1768188354.0,48.960940050048954,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,0.0
+1768188355.0,384.2124062388379,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,21.66924633884986
+1768188356.0,384.21240623883796,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,21.669246338849863
+1768188357.0,408.1147141518275,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,23.806691658856604
+1768188358.0,359.3799437675727,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,20.963830053108406
+1768188359.0,394.87984881639153,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,23.03465784762284
+1768188360.0,426.11550151975683,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,3afc9f5774114beaaac2f5edcc6ee084,24.856737588652482

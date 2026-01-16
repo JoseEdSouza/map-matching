@@ -1,0 +1,16 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768191758.0,115.58485221674879,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,6.576724137931034
+1768191759.0,169.64889162561576,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,9.162931034482758
+1768191760.0,244.46500491964582,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,12.378911118399476
+1768191761.0,248.03666666666666,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,10.794893617021277
+1768191762.0,275.26948279035526,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,9.910739922694644
+1768191763.0,262.24276795005204,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,9.244994797086367
+1768191764.0,297.93475546305933,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,10.49369406867846
+1768191765.0,290.9649858865794,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,10.77752117013087
+1768191766.0,282.4006305596217,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,9.458394324963406
+1768191767.0,196.6410706903679,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,5.066825134353038
+1768191768.0,82.8,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,0.0
+1768191769.0,79.66234567901233,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,0.0
+1768191770.0,60.01246237368308,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,0.0
+1768191771.0,14.661813611755607,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,0.0
+1768191772.0,18.322632311977717,graphhopper,offline,ohare_filtered_vid_770_sr_20.0,None,8ddcdf6c967542e5a0c7cff21dea8a84,0.0

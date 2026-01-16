@@ -1,0 +1,17 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768188329.0,264.56624728850323,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,11.024468546637742
+1768188330.0,280.2392107309487,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,10.16850699844479
+1768188331.0,266.65469449660554,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,9.675591506572296
+1768188332.0,300.09395493283256,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,10.888938321536905
+1768188333.0,274.2921857304643,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,9.513023782559456
+1768188334.0,100.60373414604115,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,4.658607314370153
+1768188335.0,111.68575298608546,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,5.171776874769117
+1768188336.0,56.81950764204878,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,0.0
+1768188337.0,54.229934924078094,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,0.0
+1768188338.0,54.229934924078094,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,0.0
+1768188339.0,20.701754385964914,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,0.0
+1768188340.0,21.000307526301594,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,0.0
+1768188341.0,8.75,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,0.0
+1768188342.0,8.571568004358088,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,0.0
+1768188343.0,9.463266901133256,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,0.0
+1768188344.0,10.5,graphium,online,ohare_filtered_vid_1622_sr_5.0,None,da42b806aea041adbfbb0fa2254c8e22,0.0

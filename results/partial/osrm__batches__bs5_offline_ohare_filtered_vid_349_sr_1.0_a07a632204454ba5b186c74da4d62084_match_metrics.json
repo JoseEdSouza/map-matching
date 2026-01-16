@@ -1,0 +1,23 @@
+{
+  "run_id": "e31b300da7be4288b4be4ba7762e2af8",
+  "precision": 0.8838810652766276,
+  "recall": 0.9935848776786388,
+  "f1_score": 0.935527873004158,
+  "error_rate": 0.06447212699584204,
+  "accuracy": 0.878865542157885,
+  "newson_krumm_error": 0.13694627870175885,
+  "matched_count": 36,
+  "added_count": 6,
+  "missing_count": 1,
+  "ground_truth_count": 37,
+  "total_gt_length": 2272.6679386664696,
+  "total_added_length": 296.653974102789,
+  "total_missing_length": 14.5794428223811,
+  "vehicle_id": 349,
+  "experiment_id": "a07a632204454ba5b186c74da4d62084",
+  "dataset_id": "ohare_filtered_vid_349_sr_1.0",
+  "matcher_name": "osrm",
+  "mode": "offline",
+  "adapter": "batches",
+  "batch_size": 5
+}
