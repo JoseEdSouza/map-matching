@@ -1636,10 +1636,10 @@ requires-dist = [
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "kagglehub", specifier = ">=0.3.12" },
     { name = "matplotlib", specifier = ">=3.10.3" },
-    { name = "mmlib", git = "https://github.com/JoseEdSouza/mmlib.git?rev=feat-add-benchmark" },
+    { name = "mmlib", git = "https://github.com/JoseEdSouza/mmlib.git?rev=main" },
     { name = "nbformat", specifier = ">=5.10.4" },
     { name = "notebook", specifier = ">=7.4.7" },
-    { name = "numpy", specifier = ">=2.2.6" },
+    { name = "numpy", specifier = ">=2.4.0" },
     { name = "osmnx", specifier = ">=2.0.6" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "pathos", specifier = ">=0.3.4" },
@@ -1806,7 +1806,7 @@ wheels = [
 [[package]]
 name = "mmlib"
 version = "0.1.0"
-source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=feat-add-benchmark#8182a5665fc9f87a9c68fa1bc825622c52722f16" }
+source = { git = "https://github.com/JoseEdSouza/mmlib.git?rev=main#f57a13298ff17e7bbf3994a9dcf9020700ba7b1b" }
 dependencies = [
     { name = "folium" },
     { name = "geopy" },
