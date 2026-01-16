@@ -1,0 +1,16 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768191508.0,46.0233870967742,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,6.316935483870968
+1768191509.0,66.58790322580646,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,9.139516129032259
+1768191510.0,215.0070899883132,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,13.5334242306194
+1768191511.0,263.35992559128357,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,11.431783151740632
+1768191512.0,257.78333333333336,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,11.2
+1768191513.0,278.9080633549315,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,10.868142548596111
+1768191514.0,660.121812349639,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,284.0481154771452
+1768191515.0,745.2728414862336,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,321.39107190590755
+1768191516.0,1133.5473577692826,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,576.4659545761187
+1768191517.0,1269.3219872440418,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,665.6354481369588
+1768191518.0,1395.0114532960042,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,748.7537286841437
+1768191519.0,1216.0035836090608,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,718.8198523797404
+1768191520.0,1207.2153444911437,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,741.5999999999999
+1768191521.0,1409.9842883548984,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,768.5999999999998
+1768191522.0,1200.8653727664819,graphhopper,offline,ohare_filtered_vid_770_sr_5.0,None,1aec558b90a64b3da2700deaaa7dbb09,764.2513863216267

@@ -1,0 +1,16 @@
+timestamp,mem_mb,matcher_name,mode,dataset_id,config,experiment_id
+1768186354.0,3.3203125,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186355.0,3.3203125,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186356.0,328.125,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186357.0,328.125,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186358.0,327.328125,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186359.0,327.328125,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186360.0,327.328125,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186361.0,349.26171875,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186362.0,349.31640625,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186363.0,349.31640625,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186364.0,349.31640625,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186365.0,349.31640625,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186366.0,349.31640625,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186367.0,349.31640625,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e
+1768186368.0,349.31640625,graphhopper,offline,ohare_filtered_vid_1139_sr_1.0,None,a06171e307184813a754e7f5924c407e

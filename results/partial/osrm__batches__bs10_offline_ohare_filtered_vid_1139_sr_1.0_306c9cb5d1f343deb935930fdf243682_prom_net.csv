@@ -1,0 +1,8 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768186416.0,999.2259916492693,osrm,offline,ohare_filtered_vid_1139_sr_1.0,None,306c9cb5d1f343deb935930fdf243682,1700.869102296451
+1768186417.0,1396.6200644641417,osrm,offline,ohare_filtered_vid_1139_sr_1.0,None,306c9cb5d1f343deb935930fdf243682,2812.816035455278
+1768186418.0,1750.4476228847707,osrm,offline,ohare_filtered_vid_1139_sr_1.0,None,306c9cb5d1f343deb935930fdf243682,3535.7545259199574
+1768186419.0,1668.625,osrm,offline,ohare_filtered_vid_1139_sr_1.0,None,306c9cb5d1f343deb935930fdf243682,3368.575
+1768186420.0,1668.625,osrm,offline,ohare_filtered_vid_1139_sr_1.0,None,306c9cb5d1f343deb935930fdf243682,3368.575
+1768186421.0,1668.625,osrm,offline,ohare_filtered_vid_1139_sr_1.0,None,306c9cb5d1f343deb935930fdf243682,3368.575
+1768186422.0,1668.625,osrm,offline,ohare_filtered_vid_1139_sr_1.0,None,306c9cb5d1f343deb935930fdf243682,3368.575

@@ -1,0 +1,22 @@
+{
+  "run_id": "aa97d886ac4f4446951f64e58cbf22ed",
+  "precision": 0.934061013981043,
+  "recall": 1.0,
+  "f1_score": 0.9659064602707497,
+  "error_rate": 0.03409353972925033,
+  "accuracy": 0.9340610139810429,
+  "newson_krumm_error": 0.07059387452423453,
+  "matched_count": 23,
+  "added_count": 1,
+  "missing_count": 0,
+  "ground_truth_count": 23,
+  "total_gt_length": 1718.5133310730084,
+  "total_added_length": 121.31651446199227,
+  "total_missing_length": 0.0,
+  "vehicle_id": 117,
+  "experiment_id": "520aa3166ddc44e0bd89161918f2896e",
+  "dataset_id": "ohare_filtered_vid_117_sr_1.0",
+  "matcher_name": "barefoot",
+  "mode": "online",
+  "adapter": "native"
+}

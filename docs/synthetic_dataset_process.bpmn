@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.10.1">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Participant_1" name="Processo de desenvolvimento do conjunto de dados" processRef="Process_1" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_1" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_1" name="Aquisição e Preparação (OSM/SUMO)">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_3</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_2" name="Simulação (SUMO/TraCI)">
+        <bpmn:flowNodeRef>Task_4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_6</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_3" name="Pós-processamento e GNSS">
+        <bpmn:flowNodeRef>Task_7</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_8</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_11</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_13</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_9</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_4" name="Validação e Benchmark">
+        <bpmn:flowNodeRef>Task_10</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_12</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Início do processo">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_1" name="Extrair rede viária (OSMnx)">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1">
+        <bpmn:targetRef>DataObject_1</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_2" name="Filtrar entidades (osmfilter)">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_2">
+        <bpmn:targetRef>DataObject_2</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_3" name="Converter rede (netconvert)">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_3">
+        <bpmn:targetRef>DataObject_3</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:dataObjectReference id="DataObject_1" name="Rede Bruta (XML/GraphML)" dataObjectRef="DO_1" />
+    <bpmn:dataObject id="DO_1" />
+    <bpmn:dataObjectReference id="DataObject_2" name="Rede OSM Filtrada" dataObjectRef="DO_2" />
+    <bpmn:dataObject id="DO_2" />
+    <bpmn:dataObjectReference id="DataObject_3" name="Rede SUMO" dataObjectRef="DO_3" />
+    <bpmn:dataObject id="DO_3" />
+    <bpmn:serviceTask id="Task_4" name="Gerar viagens (randomTrips)">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:incoming>Flow_Loop_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_4">
+        <bpmn:targetRef>DataObject_4</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_5" name="Executar simulação (SUMO)">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_6" name="Coletar dados (TraCI)">
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_5">
+        <bpmn:targetRef>DataObject_5</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:dataObjectReference id="DataObject_4" name="Rotas/Viagens" dataObjectRef="DO_4" />
+    <bpmn:dataObject id="DO_4" />
+    <bpmn:dataObjectReference id="DataObject_5" name="Ground Truth Bruto" dataObjectRef="DO_5" />
+    <bpmn:dataObject id="DO_5" />
+    <bpmn:serviceTask id="Task_7" name="Reconstruir mapeamento SUMO-OSM">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:incoming>Flow_Loop_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_6">
+        <bpmn:targetRef>DataObject_6</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_8" name="Gerar medições GNSS (Ruído Gaussiano)">
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+      <bpmn:outgoing>Flow_9</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_7">
+        <bpmn:targetRef>DataObject_7</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_11" name="Corrigir inconsistências">
+      <bpmn:incoming>Flow_No_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Loop_1</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_13" name="Ajustar parâmetros">
+      <bpmn:incoming>Flow_No_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Loop_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:dataObjectReference id="DataObject_6" name="Ground Truth Mapeado" dataObjectRef="DO_6" />
+    <bpmn:dataObject id="DO_6" />
+    <bpmn:dataObjectReference id="DataObject_7" name="Medições GNSS (Ruidoso)" dataObjectRef="DO_7" />
+    <bpmn:dataObject id="DO_7" />
+    <bpmn:dataObjectReference id="DataObject_8" name="Dataset Parquet" dataObjectRef="DO_8" />
+    <bpmn:dataObject id="DO_8" />
+    <bpmn:userTask id="Task_10" name="Validação preliminar (Manual)">
+      <bpmn:incoming>Flow_10</bpmn:incoming>
+      <bpmn:outgoing>Flow_11</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_1" name="Integridade OK?">
+      <bpmn:incoming>Flow_11</bpmn:incoming>
+      <bpmn:outgoing>Flow_Yes_1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_No_1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Gateway_2" name="Diferenças OK?">
+      <bpmn:incoming>Flow_12</bpmn:incoming>
+      <bpmn:outgoing>Flow_Yes_2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_No_2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="EndEvent_1" name="Dataset Finalizado">
+      <bpmn:incoming>Flow_Yes_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Task_12" name="Validação final em múltiplas ferramentas">
+      <bpmn:incoming>Flow_Yes_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_12</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Task_9" name="Persistir dados (Parquet)">
+      <bpmn:incoming>Flow_9</bpmn:incoming>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_8">
+        <bpmn:targetRef>DataObject_8</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_1" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_1" targetRef="Task_2" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_2" targetRef="Task_3" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_3" targetRef="Task_4" />
+    <bpmn:sequenceFlow id="Flow_Loop_2" sourceRef="Task_13" targetRef="Task_4" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_4" targetRef="Task_5" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_5" targetRef="Task_6" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Task_6" targetRef="Task_7" />
+    <bpmn:sequenceFlow id="Flow_Loop_1" sourceRef="Task_11" targetRef="Task_7" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_7" targetRef="Task_8" />
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="Task_8" targetRef="Task_9" />
+    <bpmn:sequenceFlow id="Flow_No_1" name="Não" sourceRef="Gateway_1" targetRef="Task_11" />
+    <bpmn:sequenceFlow id="Flow_No_2" name="Não" sourceRef="Gateway_2" targetRef="Task_13" />
+    <bpmn:sequenceFlow id="Flow_10" sourceRef="Task_9" targetRef="Task_10" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="Task_10" targetRef="Gateway_1" />
+    <bpmn:sequenceFlow id="Flow_Yes_1" name="Sim" sourceRef="Gateway_1" targetRef="Task_12" />
+    <bpmn:sequenceFlow id="Flow_12" sourceRef="Task_12" targetRef="Gateway_2" />
+    <bpmn:sequenceFlow id="Flow_Yes_2" name="Sim" sourceRef="Gateway_2" targetRef="EndEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="Participant_1_di" bpmnElement="Participant_1" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1775" height="1220" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1_di" bpmnElement="Lane_1" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="1745" height="300" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_2_di" bpmnElement="Lane_2" isHorizontal="true">
+        <dc:Bounds x="190" y="380" width="1745" height="280" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_3_di" bpmnElement="Lane_3" isHorizontal="true">
+        <dc:Bounds x="190" y="660" width="1745" height="350" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_4_di" bpmnElement="Lane_4" isHorizontal="true">
+        <dc:Bounds x="190" y="1010" width="1745" height="290" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="265" y="272" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="238" y="315" width="90" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_1_di" bpmnElement="Task_1">
+        <dc:Bounds x="355" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_2_di" bpmnElement="Task_2">
+        <dc:Bounds x="515" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_3_di" bpmnElement="Task_3">
+        <dc:Bounds x="675" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObject_1_di" bpmnElement="DataObject_1" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="387" y="140" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="365" y="103" width="79" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObject_2_di" bpmnElement="DataObject_2" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="547" y="140" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="537" y="102" width="58" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObject_3_di" bpmnElement="DataObject_3" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="707" y="140" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="694" y="109" width="63" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_4_di" bpmnElement="Task_4">
+        <dc:Bounds x="675" y="420" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_5_di" bpmnElement="Task_5">
+        <dc:Bounds x="835" y="420" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_6_di" bpmnElement="Task_6">
+        <dc:Bounds x="995" y="420" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObject_4_di" bpmnElement="DataObject_4" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="707" y="555" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="690" y="610" width="72" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObject_5_di" bpmnElement="DataObject_5" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="932" y="555" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="916" y="610" width="69" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_7_di" bpmnElement="Task_7">
+        <dc:Bounds x="995" y="770" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_8_di" bpmnElement="Task_8">
+        <dc:Bounds x="1155" y="770" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_11_di" bpmnElement="Task_11">
+        <dc:Bounds x="1450" y="770" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_13_di" bpmnElement="Task_13">
+        <dc:Bounds x="1690" y="770" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObject_6_di" bpmnElement="DataObject_6" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="882" y="785" width="36" height="50" />
+        <bpmndi:BPMNLabel color:color="#205022">
+          <dc:Bounds x="866" y="840" width="69" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObject_7_di" bpmnElement="DataObject_7" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="1187" y="895" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1163" y="950" width="85" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataObject_8_di" bpmnElement="DataObject_8" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="1347" y="685" width="36" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1325" y="661" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_10_di" bpmnElement="Task_10">
+        <dc:Bounds x="1315" y="1060" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1_di" bpmnElement="Gateway_1" isMarkerVisible="true">
+        <dc:Bounds x="1475" y="1075" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1460" y="1135" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_2_di" bpmnElement="Gateway_2" isMarkerVisible="true">
+        <dc:Bounds x="1715" y="1075" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1775" y="1093" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
+        <dc:Bounds x="1812" y="1182" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1805" y="1225" width="51" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_12_di" bpmnElement="Task_12">
+        <dc:Bounds x="1580" y="1060" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_9_di" bpmnElement="Task_9">
+        <dc:Bounds x="1315" y="770" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="301" y="290" />
+        <di:waypoint x="355" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="455" y="290" />
+        <di:waypoint x="515" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="615" y="290" />
+        <di:waypoint x="675" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="725" y="330" />
+        <di:waypoint x="725" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Loop_2_di" bpmnElement="Flow_Loop_2">
+        <di:waypoint x="1740" y="770" />
+        <di:waypoint x="1740" y="400" />
+        <di:waypoint x="740" y="400" />
+        <di:waypoint x="740" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="775" y="460" />
+        <di:waypoint x="835" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="935" y="460" />
+        <di:waypoint x="995" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="1045" y="500" />
+        <di:waypoint x="1045" y="770" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Loop_1_di" bpmnElement="Flow_Loop_1">
+        <di:waypoint x="1500" y="770" />
+        <di:waypoint x="1500" y="610" />
+        <di:waypoint x="1060" y="610" />
+        <di:waypoint x="1060" y="770" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8">
+        <di:waypoint x="1095" y="810" />
+        <di:waypoint x="1155" y="810" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9">
+        <di:waypoint x="1255" y="810" />
+        <di:waypoint x="1315" y="810" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_No_1_di" bpmnElement="Flow_No_1">
+        <di:waypoint x="1500" y="1075" />
+        <di:waypoint x="1500" y="850" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1505" y="966" width="21" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_No_2_di" bpmnElement="Flow_No_2">
+        <di:waypoint x="1740" y="1075" />
+        <di:waypoint x="1740" y="850" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1745" y="964" width="21" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10">
+        <di:waypoint x="1365" y="850" />
+        <di:waypoint x="1365" y="1060" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11">
+        <di:waypoint x="1415" y="1100" />
+        <di:waypoint x="1475" y="1100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Yes_1_di" bpmnElement="Flow_Yes_1">
+        <di:waypoint x="1525" y="1100" />
+        <di:waypoint x="1580" y="1100" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1544" y="1082" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12_di" bpmnElement="Flow_12">
+        <di:waypoint x="1680" y="1100" />
+        <di:waypoint x="1715" y="1100" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Yes_2_di" bpmnElement="Flow_Yes_2">
+        <di:waypoint x="1740" y="1125" />
+        <di:waypoint x="1740" y="1200" />
+        <di:waypoint x="1812" y="1200" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1767" y="1177" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1_di" bpmnElement="DataOutputAssociation_1">
+        <di:waypoint x="405" y="250" />
+        <di:waypoint x="405" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_2_di" bpmnElement="DataOutputAssociation_2">
+        <di:waypoint x="565" y="250" />
+        <di:waypoint x="565" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_3_di" bpmnElement="DataOutputAssociation_3">
+        <di:waypoint x="725" y="250" />
+        <di:waypoint x="725" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_4_di" bpmnElement="DataOutputAssociation_4">
+        <di:waypoint x="725" y="500" />
+        <di:waypoint x="725" y="555" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_5_di" bpmnElement="DataOutputAssociation_5">
+        <di:waypoint x="1013" y="500" />
+        <di:waypoint x="968" y="557" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_6_di" bpmnElement="DataOutputAssociation_6">
+        <di:waypoint x="995" y="810" />
+        <di:waypoint x="918" y="810" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_7_di" bpmnElement="DataOutputAssociation_7">
+        <di:waypoint x="1205" y="850" />
+        <di:waypoint x="1205" y="895" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_8_di" bpmnElement="DataOutputAssociation_8">
+        <di:waypoint x="1365" y="770" />
+        <di:waypoint x="1365" y="735" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

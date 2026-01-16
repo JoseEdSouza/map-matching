@@ -1,0 +1,17 @@
+timestamp,rx_bps,matcher_name,mode,dataset_id,config,experiment_id,tx_bps
+1768188152.0,49.858741258741254,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,6.843356643356643
+1768188153.0,76.60699300699302,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,10.514685314685316
+1768188154.0,218.99986833443054,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,11.202304147465439
+1768188155.0,278.84186965108626,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,13.967281105990784
+1768188156.0,254.04886092427853,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,11.0447819483619
+1768188157.0,297.8978520286396,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,12.867303102625298
+1768188158.0,298.1528706624606,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,10.711324921135647
+1768188159.0,279.42296353762606,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,9.846051202482546
+1768188160.0,271.85235507246375,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,9.51086956521739
+1768188161.0,272.5026014568158,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,5.4630593132154
+1768188162.0,79.98174002309766,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,0.0
+1768188163.0,88.54099833183626,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,0.0
+1768188164.0,65.0957449373192,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,0.0
+1768188165.0,57.268679684988754,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,0.0
+1768188166.0,14.980238254286352,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,0.0
+1768188167.0,12.597695390781563,graphhopper,offline,ohare_filtered_vid_300_sr_20.0,None,f813f30b9bde4ceb91be7b7c454110e6,0.0
