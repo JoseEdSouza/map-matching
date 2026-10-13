@@ -3,7 +3,7 @@ import time
 
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
+from typing import Generator
 from uuid import uuid4
 
 from .compose import _docker_compose
@@ -29,7 +29,7 @@ def launch_service(
     matcher_name: str | None = None,
     compose_cwd: Path | None = None,
     startup_sleep_s: float = 2.0,
-) -> Iterator[str]:
+) -> Generator[str, None, None]:
     """
     Launch one or more matcher services via docker compose, passing env vars used by labels.
 
