@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_Benchmark" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="4.6.0">
+  <bpmn:collaboration id="Collaboration_0x9k8z1">
+    <bpmn:participant id="Participant_Benchmark" name="Processo de Benchmark Automatizado" processRef="Process_Benchmark_Engine" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Benchmark_Engine" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1h2j3k4">
+      <bpmn:lane id="Lane_Orchestrator" name="Orquestrador e Runner (Controle)">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_LoopStart</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RunSim</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_CheckMoreConfigs</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_Final</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Infrastructure" name="Infraestrutura (Docker e Métricas)">
+        <bpmn:flowNodeRef>Task_InitMetrics</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ProvisionService</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ExtractMetrics</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_DeprovisionService</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_StopMetrics</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Output" name="Gestão de Resultados (Output)">
+        <bpmn:flowNodeRef>Task_SaveReport</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AggregateReports</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Início do Benchmark">
+      <bpmn:outgoing>Flow_To_InitMetrics</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Task_InitMetrics" name="Iniciar Monitoramento de Infraestrutura">
+      <bpmn:incoming>Flow_To_InitMetrics</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_LoopStart</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_LoopStart">
+      <bpmn:incoming>Flow_To_LoopStart</bpmn:incoming>
+      <bpmn:incoming>Flow_LoopBack</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Provision</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_RunSim" name="Executar Simulação de Fluxo GPS">
+      <bpmn:incoming>Flow_To_RunSim</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Deprovision</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_SaveReport" name="Persistir Relatório Individual">
+      <bpmn:incoming>Flow_To_SaveSingle</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_GatewayCheck</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_CheckMoreConfigs" name="Existem mais cenários?">
+      <bpmn:incoming>Flow_To_GatewayCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_LoopBack</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_StopMetrics</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_AggregateReports" name="Consolidar Resultados Finais">
+      <bpmn:incoming>Flow_To_Aggregate</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_To_InitMetrics" sourceRef="StartEvent_1" targetRef="Task_InitMetrics" />
+    <bpmn:sequenceFlow id="Flow_To_LoopStart" sourceRef="Task_InitMetrics" targetRef="Gateway_LoopStart" />
+    <bpmn:sequenceFlow id="Flow_To_Provision" sourceRef="Gateway_LoopStart" targetRef="Task_ProvisionService" />
+    <bpmn:sequenceFlow id="Flow_To_RunSim" sourceRef="Task_ProvisionService" targetRef="Task_RunSim" />
+    <bpmn:sequenceFlow id="Flow_To_Deprovision" sourceRef="Task_RunSim" targetRef="Task_DeprovisionService" />
+    <bpmn:sequenceFlow id="Flow_To_Extract" sourceRef="Task_DeprovisionService" targetRef="Task_ExtractMetrics" />
+    <bpmn:sequenceFlow id="Flow_To_SaveSingle" sourceRef="Task_ExtractMetrics" targetRef="Task_SaveReport" />
+    <bpmn:sequenceFlow id="Flow_To_GatewayCheck" sourceRef="Task_SaveReport" targetRef="Gateway_CheckMoreConfigs" />
+    <bpmn:sequenceFlow id="Flow_LoopBack" name="Sim" sourceRef="Gateway_CheckMoreConfigs" targetRef="Gateway_LoopStart" />
+    <bpmn:sequenceFlow id="Flow_To_StopMetrics" name="Não" sourceRef="Gateway_CheckMoreConfigs" targetRef="Task_StopMetrics" />
+    <bpmn:sequenceFlow id="Flow_To_Aggregate" sourceRef="Task_StopMetrics" targetRef="Task_AggregateReports" />
+    <bpmn:sequenceFlow id="Flow_To_End" sourceRef="Task_AggregateReports" targetRef="EndEvent_Final" />
+    <bpmn:endEvent id="EndEvent_Final" name="Execução Concluída">
+      <bpmn:incoming>Flow_To_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="Task_ProvisionService" name="Provisionar Container do Algoritmo">
+      <bpmn:incoming>Flow_To_Provision</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_RunSim</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_ExtractMetrics" name="Extrair Métricas de Consumo (CPU/RAM)">
+      <bpmn:incoming>Flow_To_Extract</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_SaveSingle</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_DeprovisionService" name="Desprovisionar Container">
+      <bpmn:incoming>Flow_To_Deprovision</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Extract</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_StopMetrics" name="Encerrar Monitoramento">
+      <bpmn:incoming>Flow_To_StopMetrics</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Aggregate</bpmn:outgoing>
+    </bpmn:task>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_0x9k8z1">
+      <bpmndi:BPMNShape id="Participant_Benchmark_di" bpmnElement="Participant_Benchmark" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1350" height="530" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Output_di" bpmnElement="Lane_Output" isHorizontal="true">
+        <dc:Bounds x="190" y="450" width="1320" height="160" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Infrastructure_di" bpmnElement="Lane_Infrastructure" isHorizontal="true">
+        <dc:Bounds x="190" y="250" width="1320" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Orchestrator_di" bpmnElement="Lane_Orchestrator" isHorizontal="true">
+        <dc:Bounds x="190" y="80" width="1320" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="242" y="142" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="223" y="185" width="75" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_InitMetrics_di" bpmnElement="Task_InitMetrics">
+        <dc:Bounds x="330" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_LoopStart_di" bpmnElement="Gateway_LoopStart" isMarkerVisible="true">
+        <dc:Bounds x="485" y="135" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RunSim_di" bpmnElement="Task_RunSim">
+        <dc:Bounds x="700" y="120" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SaveReport_di" bpmnElement="Task_SaveReport">
+        <dc:Bounds x="1080" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_CheckMoreConfigs_di" bpmnElement="Gateway_CheckMoreConfigs" isMarkerVisible="true">
+        <dc:Bounds x="1205" y="135" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1237" y="116" width="66" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AggregateReports_di" bpmnElement="Task_AggregateReports">
+        <dc:Bounds x="1330" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Final_di" bpmnElement="EndEvent_Final">
+        <dc:Bounds x="1452" y="152" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1445" y="114.5" width="50" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ProvisionService_di" bpmnElement="Task_ProvisionService">
+        <dc:Bounds x="540" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ExtractMetrics_di" bpmnElement="Task_ExtractMetrics">
+        <dc:Bounds x="1000" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_DeprovisionService_di" bpmnElement="Task_DeprovisionService">
+        <dc:Bounds x="810" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_StopMetrics_di" bpmnElement="Task_StopMetrics">
+        <dc:Bounds x="1330" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_To_InitMetrics_di" bpmnElement="Flow_To_InitMetrics">
+        <di:waypoint x="278" y="160" />
+        <di:waypoint x="300" y="160" />
+        <di:waypoint x="300" y="350" />
+        <di:waypoint x="330" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_LoopStart_di" bpmnElement="Flow_To_LoopStart">
+        <di:waypoint x="430" y="350" />
+        <di:waypoint x="460" y="350" />
+        <di:waypoint x="460" y="160" />
+        <di:waypoint x="485" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Provision_di" bpmnElement="Flow_To_Provision">
+        <di:waypoint x="510" y="185" />
+        <di:waypoint x="510" y="350" />
+        <di:waypoint x="540" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_RunSim_di" bpmnElement="Flow_To_RunSim">
+        <di:waypoint x="640" y="350" />
+        <di:waypoint x="670" y="350" />
+        <di:waypoint x="670" y="160" />
+        <di:waypoint x="700" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Deprovision_di" bpmnElement="Flow_To_Deprovision">
+        <di:waypoint x="800" y="160" />
+        <di:waypoint x="860" y="160" />
+        <di:waypoint x="860" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Extract_di" bpmnElement="Flow_To_Extract">
+        <di:waypoint x="910" y="350" />
+        <di:waypoint x="1000" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_SaveSingle_di" bpmnElement="Flow_To_SaveSingle">
+        <di:waypoint x="1050" y="390" />
+        <di:waypoint x="1050" y="530" />
+        <di:waypoint x="1080" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_GatewayCheck_di" bpmnElement="Flow_To_GatewayCheck">
+        <di:waypoint x="1180" y="530" />
+        <di:waypoint x="1230" y="530" />
+        <di:waypoint x="1230" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_LoopBack_di" bpmnElement="Flow_LoopBack">
+        <di:waypoint x="1230" y="135" />
+        <di:waypoint x="1230" y="90" />
+        <di:waypoint x="510" y="90" />
+        <di:waypoint x="510" y="135" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1195" y="113" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_StopMetrics_di" bpmnElement="Flow_To_StopMetrics">
+        <di:waypoint x="1255" y="160" />
+        <di:waypoint x="1380" y="160" />
+        <di:waypoint x="1380" y="310" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1389" y="177" width="21" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Aggregate_di" bpmnElement="Flow_To_Aggregate">
+        <di:waypoint x="1380" y="390" />
+        <di:waypoint x="1380" y="490" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_End_di" bpmnElement="Flow_To_End">
+        <di:waypoint x="1430" y="530" />
+        <di:waypoint x="1470" y="530" />
+        <di:waypoint x="1470" y="188" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
