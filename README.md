@@ -2,7 +2,7 @@
 
 A systematic, reproducible benchmark for **open-source online map matching** tools. It compares natively online tools (Barefoot, GraphiumMM) with natively offline ones (OSRM, GraphHopper) that are adapted to incremental execution through client-side micro-batching. The tools are evaluated on accuracy, latency, resource usage and throughput, using a synthetic dataset with exact ground truth.
 
-This repository contains the benchmark harness, the synthetic dataset and the analysis behind the bachelor's thesis (B.Sc. in Software Engineering, UFC) below.
+This repository contains the benchmark harness, the synthetic dataset and the analysis behind the undergraduate thesis (B.Sc. in Software Engineering, UFC) below.
 
 ## 📄 Publication
 
